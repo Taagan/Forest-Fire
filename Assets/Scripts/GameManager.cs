@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -8,7 +9,9 @@ public class GameManager : MonoBehaviour
     public GameObject start;
     public GameObject End;
     public GameObject player;
+    [SerializeField]
     public GameObject checkpoint;
+
     float[] playerStuff = new float[3];
     // Start is called before the first frame update
     void Start()
@@ -53,7 +56,15 @@ public class GameManager : MonoBehaviour
     {
         if (player.GetComponent<PlayerScript>().hitpoints < 1)
         {
-            LoadCheckPoint();
+            if (checkpoint)
+                LoadCheckPoint();
+            else
+                RestartLevel();
         }
+    }
+
+    public void RestartLevel()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }
