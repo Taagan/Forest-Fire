@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,42 +12,26 @@ using UnityEngine;
 public class MoveScript : MonoBehaviour
 {
     public LayerMask collisionMask;
-
+    
     [Range(3,20)]
     public int horizontalRays = 5;
     [Range(3, 20)]
     public int verticalRays = 5;
-    float skinDepth = .15f;//hur djupt inne i hitboxen som raycast-raysen börjar.
+
+    protected float skinDepth = .05f;//hur djupt inne i hitboxen som raycast-raysen börjar.
 
     [HideInInspector]
     public bool ignoreSemisolid = false;//låter en falla genom semisolider, används när man ska duck-hoppa genom en semisolid plattform, per platformingstandard
 
-    protected RayStruct rayStruct;
-    protected CollisionInfo collisions;
+    protected RayOrigins rayOrigins;
+    public CollisionInfo collisions;
     new protected BoxCollider2D collider;
     
-    void Start()
+    protected virtual void Start()
     {
         collider = GetComponent<BoxCollider2D>();
     }
-
-    void Update()
-    {
-        //Debugkod som låter en direktkontrollera saken.
-        Vector2 velocity = new Vector2();
-        
-        velocity.y = -20;
-        velocity.x = Input.GetAxisRaw("Horizontal") * 10;
-
-        velocity.y += Input.GetAxisRaw("Vertical") * 30;
-
-        if (Input.GetKey(KeyCode.S))
-            ignoreSemisolid = true;
-        else
-            ignoreSemisolid = false;
-
-        Move(velocity * Time.deltaTime);
-    }
+    
 
     /// <summary>
     /// Moves entity with raycast collisionChecks and updates collisions
@@ -56,17 +41,20 @@ public class MoveScript : MonoBehaviour
     {
         collisions.reset();
 
-        HorizontalMove(moveBy.x);
-        VerticalMove(moveBy.y);
+        UpdateRayOrigins();
+        HorizontalMove(ref moveBy);
+        transform.Translate(moveBy.x, 0, 0, Space.World);
+
+        UpdateRayOrigins();//ooptimiserat
+        VerticalMove(ref moveBy);
+        transform.Translate(0, moveBy.y, 0, Space.World);
     }
     
-    protected void HorizontalMove(float moveBy)
-    {
-        UpdateRayStruct();//någorlunda ooptimiserat men är så liten operation att det inte lär göra mycket
-        
-        sbyte dir = (sbyte)Mathf.Sign(moveBy);
-        Vector2 rStart = dir == 1 ? rayStruct.bottomRight : rayStruct.bottomLeft;
-        float rayLength = Mathf.Abs(moveBy) + skinDepth;
+    protected virtual void HorizontalMove(ref Vector2 moveBy)//kollar kollision och kapar moveBy ifall kollision upptäcks. Sparar saker i collisions också
+    {                           //criteria kanske e lite överflödig, men gör så jag kan ignorera en rays resultat beroende på vilket kriterie som jag vill, används i WalkerMoveScript t. ex.
+        sbyte dir = (sbyte)Mathf.Sign(moveBy.x);
+        Vector2 rStart = dir == 1 ? rayOrigins.bottomRight : rayOrigins.bottomLeft;
+        float rayLength = Mathf.Abs(moveBy.x) + skinDepth;
 
         for (int i = 0; i < horizontalRays; i++)
         {
@@ -76,7 +64,7 @@ public class MoveScript : MonoBehaviour
             {
                 if (!hit.transform.CompareTag("Semisolid"))
                 {
-                    moveBy = (hit.distance - skinDepth) * dir;
+                    moveBy.x = (hit.distance - skinDepth) * dir;
                     rayLength = hit.distance;
                     if (dir >= 1)
                         collisions.right = true;
@@ -84,19 +72,15 @@ public class MoveScript : MonoBehaviour
                         collisions.left = true;
                 }
             }
-            rStart += rayStruct.horizontalSpacing;
+            rStart += rayOrigins.horizontalSpacing;
         }
-
-        transform.Translate(moveBy, 0, 0, Space.World);
     }
 
-    protected void VerticalMove(float moveBy)
+    protected virtual void VerticalMove(ref Vector2 moveBy)
     {
-        UpdateRayStruct();
-
-        sbyte dir = (sbyte)Mathf.Sign(moveBy);
-        Vector2 rStart = dir == 1 ? rayStruct.topLeft : rayStruct.bottomLeft;
-        float rayLength = Mathf.Abs(moveBy) + skinDepth;
+        sbyte dir = (sbyte)Mathf.Sign(moveBy.y);
+        Vector2 rStart = dir == 1 ? rayOrigins.topLeft : rayOrigins.bottomLeft;
+        float rayLength = Mathf.Abs(moveBy.y) + skinDepth;
 
         for (int i = 0; i < verticalRays; i++)
         {
@@ -106,49 +90,58 @@ public class MoveScript : MonoBehaviour
             {
                 if(!(hit.transform.CompareTag("Semisolid") && (dir > 0 || ignoreSemisolid)))//om den är semisolid, ignorera den i vissa fall
                 {
-                    moveBy = (hit.distance - skinDepth) * dir;
+                    moveBy.y = (hit.distance - skinDepth) * dir;
                     rayLength = hit.distance;
                     if (dir <= 0)
+                    {
                         collisions.below = true;
+                    }
                     else
                         collisions.above = true;
                 }
-
             }
-
-            rStart += rayStruct.verticalSpacing;
+            rStart += rayOrigins.verticalSpacing;
         }
-
-        transform.Translate(0, moveBy, 0, Space.World);
     }
 
-    private void UpdateRayStruct()
+    protected void UpdateRayOrigins()
     {
         Bounds bounds = collider.bounds;
+        rayOrigins.absBottomLeft = bounds.min;
+        rayOrigins.absBottomRight = new Vector2(bounds.max.x, bounds.min.y);
+        
         bounds.Expand(skinDepth * -2);
 
-        rayStruct.bottomLeft = bounds.min;
-        rayStruct.bottomRight = new Vector2(bounds.max.x, bounds.min.y);
-        rayStruct.topRight = bounds.max;
-        rayStruct.topLeft = new Vector2(bounds.min.x, bounds.max.y);
+        rayOrigins.bottomLeft = bounds.min;
+        rayOrigins.bottomRight = new Vector2(bounds.max.x, bounds.min.y);
+        rayOrigins.topRight = bounds.max;
+        rayOrigins.topLeft = new Vector2(bounds.min.x, bounds.max.y);
 
-        rayStruct.horizontalSpacing = new Vector2(0, bounds.size.y / (horizontalRays - 1));
-        rayStruct.verticalSpacing = new Vector2(bounds.size.x / (verticalRays - 1), 0);
+        rayOrigins.horizontalSpacing = new Vector2(0, bounds.size.y / (horizontalRays - 1));
+        rayOrigins.verticalSpacing = new Vector2(bounds.size.x / (verticalRays - 1), 0);
     }
 
-    protected struct RayStruct
+    protected struct RayOrigins
     {
+        public Vector2 absBottomLeft, absBottomRight;//absoluta hörnen
         public Vector2 topLeft, topRight, bottomLeft, bottomRight;
         public Vector2 horizontalSpacing, verticalSpacing;
     }
 
-    protected struct CollisionInfo
+    public struct CollisionInfo
     {
         public bool above, below, left, right;
+
+        public bool ascendingSlope, descendingSlope;
+        public float slopeAngle, slopeAngleOld;
 
         public void reset()
         {
             above = below = left = right = false;
+            ascendingSlope = descendingSlope = false;
+
+            slopeAngleOld = slopeAngle;
+            slopeAngle = 0;
         }
     }
 }
