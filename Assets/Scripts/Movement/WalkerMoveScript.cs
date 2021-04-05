@@ -124,6 +124,7 @@ public class WalkerMoveScript : MoveScript
                     {
                         //gör inget...... lite onödigt kanske men men
                         Debug.Log("Gör inget i verticalMove");
+
                     }
                     else
                     {
@@ -189,7 +190,6 @@ public class WalkerMoveScript : MoveScript
 
             if (hit)//det är här specialfallet faktiskt händer, lägger till lite i moveBy.x bara.. mycket kod för litet specialfall.....
             {
-                Debug.Log("Descending, specialfall");
                 float hitDistance = hit.distance - skinDepth;
                 moveBy.y = -hitDistance;
 
@@ -203,18 +203,7 @@ public class WalkerMoveScript : MoveScript
         //lägg till kollar i verticalMove:
         //ska göra så den glider ner för en backe den inte kan stå på
     }
-
-    /// <summary>
-    /// version av descendslope som istället för att kolla moveBy.x för att veta hur långt man ska ta sig så använder den moveBy.y
-    /// Den redigerar mest moveBy.x så att man puttas åt sidan med väggen. Kommer inte minska moveBy.y, för att hålla den
-    /// konsistent med hur det är när man bara träffar en vägg och faller.
-    /// </summary>
-    /// <param name="moveBy">kommer ändast ta hänsyn till moveBy.y men redigerar moveBy.x</param>
-    /// <param name="sAngle">Signed angle, alltså med negativt värde möjligt. Negativt lutar så saker rullar åt höger </param>
-    protected void FallDownSlope(ref Vector2 moveBy, float sAngle)//signed angle
-    {
-
-    }
+    
 
     //FUNKAR
     protected void GroundCheck()
