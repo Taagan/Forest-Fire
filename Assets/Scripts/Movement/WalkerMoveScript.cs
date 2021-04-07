@@ -14,29 +14,11 @@ public class WalkerMoveScript : MoveScript
     protected float groundCheckRange = .02f;
     protected float groundAngle = 0.0f;//i vinklar, unitys egna använder vinklar för det mesta, andra mattebibliotek använder radianer..
 
+    Vector2 velocity;
+
     override protected void Start()
     {
         base.Start();
-    }
-
-    /// <summary>
-    /// ENDAST FÖR TESTNING
-    /// </summary>
-    void Update()
-    {
-        //Debugkod som låter en direktkontrollera saken.
-        Vector2 velocity = new Vector2();
-
-        velocity.y = -10;
-        velocity.x = Input.GetAxisRaw("Horizontal") * 10;
-        velocity.y += Input.GetAxisRaw("Vertical") * 30;
-
-        if (Input.GetKey(KeyCode.S))
-            ignoreSemisolid = true;
-        else
-            ignoreSemisolid = false;
-
-        Move(velocity * Time.deltaTime);
     }
 
     public override void Move(Vector2 moveBy)
@@ -44,7 +26,7 @@ public class WalkerMoveScript : MoveScript
         UpdateRayOrigins();
         GroundCheck();
         collisions.reset();
-        
+
         if(grounded && groundAngle != 0 && moveBy.y <= 0 && moveBy.x != 0)
         {
             if (Mathf.Sign(moveBy.x) != Mathf.Sign(groundAngle))
@@ -56,6 +38,7 @@ public class WalkerMoveScript : MoveScript
         HorizontalMove(ref moveBy);
         VerticalMove(ref moveBy);
         
+
         transform.Translate(moveBy, Space.World);
     }
 
@@ -78,9 +61,9 @@ public class WalkerMoveScript : MoveScript
                     if(i == 0 && hitAngle <= maxWalkableAngle && !collisions.ascendingSlope && moveBy.y <= 0)
                     {
                         float hitDist = hit.distance - skinDepth;
-                        moveBy.x -= hitDist;
+                        moveBy.x -= hitDist * dir;
                         AscendSlope(ref moveBy, hitAngle);
-                        moveBy.x += hitDist;
+                        moveBy.x += hitDist * dir;
                     }
                     else if (hitAngle > maxWalkableAngle)
                     {
@@ -89,7 +72,9 @@ public class WalkerMoveScript : MoveScript
 
                         //kolla om går uppför, isåfall justera moveBy.y så den inte liksom hoppar vid väggen.
                         if (collisions.ascendingSlope)
-                            moveBy.y = Mathf.Tan(Mathf.Abs(groundAngle) * Mathf.Deg2Rad) * moveBy.x;
+                        {
+                            moveBy.y = Mathf.Abs(Mathf.Tan(Mathf.Abs(groundAngle) * Mathf.Deg2Rad) * moveBy.x);
+                        }
 
 
                         if (dir >= 1)
@@ -123,7 +108,6 @@ public class WalkerMoveScript : MoveScript
                     if((i == 0 && Mathf.Sign(moveBy.x) == 1 || (i == verticalRays - 1 && Mathf.Sign(moveBy.x) == -1)) && dir == -1 && collisions.descendingSlope && hitAngle == groundAngle)
                     {
                         //gör inget...... lite onödigt kanske men men
-                        Debug.Log("Gör inget i verticalMove");
 
                     }
                     else
@@ -158,6 +142,7 @@ public class WalkerMoveScript : MoveScript
         //ersätt mvoeBy.y med nytt, om man redan har positiv y-fart borde de filtreras före det kommer hit.
         moveBy.y = Mathf.Sin(angle) * Mathf.Abs(moveBy.x);
         moveBy.x = Mathf.Cos(angle) * moveBy.x;
+        
     }
 
     protected void DescendSlope(ref Vector2 moveBy, float angle)//tar moveBy.x och lutar det avståndet längs kurvan som skas nerför.
@@ -212,11 +197,11 @@ public class WalkerMoveScript : MoveScript
         groundAngle = 0;
 
         //gör båda för att motverka ett scenario där man står på platt mark men den upptäcker en nerförsbacke som ens ena kant hänger över
-        RaycastHit2D leftHit = Physics2D.Raycast(rayOrigins.absBottomLeft + Vector2.up * 2 * skinDepth, Vector2.down, groundCheckRange + 2 * skinDepth, collisionMask);
-        RaycastHit2D rightHit = Physics2D.Raycast(rayOrigins.absBottomRight + Vector2.up * 2 * skinDepth, Vector2.down, groundCheckRange + 2 * skinDepth, collisionMask);
+        RaycastHit2D leftHit = Physics2D.Raycast(rayOrigins.absBottomLeft + Vector2.up * 2 * skinDepth + Vector2.right * .01f, Vector2.down, groundCheckRange + 2 * skinDepth, collisionMask);
+        RaycastHit2D rightHit = Physics2D.Raycast(rayOrigins.absBottomRight + Vector2.up * 2 * skinDepth - Vector2.right * .01f, Vector2.down, groundCheckRange + 2 * skinDepth, collisionMask);
 
-        Debug.DrawRay(rayOrigins.absBottomRight + Vector2.up * 2 * skinDepth, Vector2.down * (groundCheckRange + 2 * skinDepth), Color.blue);
-        Debug.DrawRay(rayOrigins.absBottomLeft + Vector2.up * 2 * skinDepth, Vector2.down * (groundCheckRange + 2 * skinDepth), Color.blue);
+        Debug.DrawRay(rayOrigins.absBottomRight + Vector2.up * 2 * skinDepth - Vector2.right * .01f, Vector2.down * (groundCheckRange + 2 * skinDepth), Color.blue);
+        Debug.DrawRay(rayOrigins.absBottomLeft + Vector2.up * 2 * skinDepth + Vector2.right * .01f, Vector2.down * (groundCheckRange + 2 * skinDepth), Color.blue);
 
         //om båda fast med olika vinklar, mest komplicerade kollen, rätt så specifikt fall iofs men
         if((leftHit && rightHit) && (leftHit.normal != rightHit.normal))
