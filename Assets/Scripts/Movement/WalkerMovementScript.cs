@@ -4,24 +4,61 @@ using System.Collections.Generic;
 using UnityEngine;
 
 //Funkar bäst när den påverkas av gravitation men allt sådant får man göra själv i controllerklasser.
-public class WalkerMoveScript : MoveScript
+public class WalkerMovementScript : MovementScript
 {
     [Range(1, 89)]
     public float maxWalkableAngle = 50;//degrees from the ground up
     [HideInInspector]
     public bool grounded = false;//sann om mark upptäcks med groundcheck, bör användas för om hopp är tillåtet, mer förlåtande än collisions.below
+    [HideInInspector]
+    public Vector2 velocity = Vector2.zero;
 
+    public bool gravityTypeAcceleration = false;//accelererar den med -gravityConstant/s eller är dess velocity neråt bara konstant -gravityConstant
+    public bool affectedByGravity = true;
+    public float gravityConstant = 9.82f;
+    public float maxFallSpeed = 40f;
+    
     protected float groundCheckRange = .02f;
     protected float groundAngle = 0.0f;//i vinklar, unitys egna använder vinklar för det mesta, andra mattebibliotek använder radianer..
-
-    Vector2 velocity;
+    protected bool verticalSpeedSet = false; //hindrar gravitations påverkan en uppdatering efter att SetVerticalVelocity kallats
 
     override protected void Start()
     {
         base.Start();
     }
 
-    public override void Move(Vector2 moveBy)
+    protected virtual void Update()
+    {
+        if (affectedByGravity && (!collisions.below && !collisions.ascendingSlope) && !verticalSpeedSet)
+        {
+            if (gravityTypeAcceleration)
+            {
+                velocity.y -= gravityConstant * Time.deltaTime;
+                if (velocity.y < -maxFallSpeed)
+                    velocity.y = -maxFallSpeed;
+            }
+            else
+                velocity.y = -gravityConstant;
+        }
+        else if (affectedByGravity && (collisions.below||collisions.ascendingSlope) && !verticalSpeedSet)
+            velocity.y = 0;
+
+        Move(velocity * Time.deltaTime);
+        verticalSpeedSet = false;
+    }
+
+    public void SetHorizontalVelocity(float speed)//negativt = vänster
+    {
+        velocity.x = speed;
+    }
+    
+    public void SetVerticalVelocity(float speed)//negativt = neråt
+    {
+        velocity.y = speed;
+        verticalSpeedSet = true;
+    }
+
+    protected override void Move(Vector2 moveBy)
     {
         UpdateRayOrigins();
         GroundCheck();
@@ -58,12 +95,15 @@ public class WalkerMoveScript : MoveScript
                 {
                     float hitAngle = Vector2.Angle(hit.normal, Vector2.up);
 
-                    if(i == 0 && hitAngle <= maxWalkableAngle && !collisions.ascendingSlope && moveBy.y <= 0)
+                    if(i == 0 && hitAngle <= maxWalkableAngle && !collisions.ascendingSlope)// && moveBy.y <= 0)
                     {
+                        float yBefore = moveBy.y;
                         float hitDist = hit.distance - skinDepth;
                         moveBy.x -= hitDist * dir;
                         AscendSlope(ref moveBy, hitAngle);
                         moveBy.x += hitDist * dir;
+                        if (yBefore > moveBy.y)
+                            moveBy.y = yBefore;
                     }
                     else if (hitAngle > maxWalkableAngle)
                     {
