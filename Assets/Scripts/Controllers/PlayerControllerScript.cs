@@ -20,8 +20,9 @@ public class PlayerControllerScript : MonoBehaviour
         if (xAxis != 0)
             playerMover.Move((sbyte)xAxis);
 
-        if (Input.GetButton("Jump"))
-            playerMover.SetVerticalVelocity(playerMover.jumpVelocity);
+        if (Input.GetButtonDown("Jump"))
+            playerMover.Jump();
+            //playerMover.SetVerticalVelocity(playerMover.jumpVelocity);
 
         if (Input.GetAxisRaw("Vertical") < 0)
         {

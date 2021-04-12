@@ -36,7 +36,7 @@ public class MovementScript : MonoBehaviour
     /// Moves entity with raycast collisionChecks and updates collisions
     /// </summary>
     /// <param name="moveBy"></param>
-    protected virtual void Move(Vector2 moveBy)
+    protected virtual Vector2 Move(Vector2 moveBy)
     {
         collisions.reset();
 
@@ -47,6 +47,7 @@ public class MovementScript : MonoBehaviour
         UpdateRayOrigins();//ooptimiserat
         VerticalMove(ref moveBy);
         transform.Translate(0, moveBy.y, 0, Space.World);
+        return moveBy;
     }
     
     protected virtual void HorizontalMove(ref Vector2 moveBy)//kollar kollision och kapar moveBy ifall kollision upptäcks. Sparar saker i collisions också

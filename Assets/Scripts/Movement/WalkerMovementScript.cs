@@ -21,6 +21,8 @@ public class WalkerMovementScript : MovementScript
     protected float groundCheckRange = .02f;
     protected float groundAngle = 0.0f;//i vinklar, unitys egna använder vinklar för det mesta, andra mattebibliotek använder radianer..
     protected bool verticalSpeedSet = false; //hindrar gravitations påverkan en uppdatering efter att SetVerticalVelocity kallats
+    protected bool collisionBelowLast = false;
+    protected float constantGroundedDownVelocity = 20;//fixar skiftet från platt mark till nedförsbacke, lite hackigt kanske men men..
 
     override protected void Start()
     {
@@ -29,7 +31,7 @@ public class WalkerMovementScript : MovementScript
 
     protected virtual void Update()
     {
-        if (affectedByGravity && (!collisions.below && !collisions.ascendingSlope) && !verticalSpeedSet)
+        if (affectedByGravity && !grounded && !verticalSpeedSet)
         {
             if (gravityTypeAcceleration)
             {
@@ -40,10 +42,28 @@ public class WalkerMovementScript : MovementScript
             else
                 velocity.y = -gravityConstant;
         }
-        else if (affectedByGravity && (collisions.below||collisions.ascendingSlope) && !verticalSpeedSet)
-            velocity.y = 0;
+        else if (affectedByGravity && grounded && !verticalSpeedSet)
+        {
+            velocity.y = -constantGroundedDownVelocity;//lite av ett hack som gör att övergången mellan platt till nerförsbacke blir bra
+            //TODO: FIXA!
+            //DEN HÄNDER JU INTE NÄR DEN SKA NU...
+        }
 
-        Move(velocity * Time.deltaTime);
+
+        collisionBelowLast = collisions.below;
+        Vector2 moved = Move(velocity * Time.deltaTime);
+        if(!collisions.below && collisionBelowLast && velocity.y <= -constantGroundedDownVelocity)
+        {
+            //flytta upp så mycket som den flyttade ner - velocity.y + constantGroundedDownVelocity * Time.deltaTime
+            velocity.y += constantGroundedDownVelocity;
+            transform.Translate(0, -moved.y + velocity.y, 0);
+        }
+        
+        //TODO:
+        //lägg till hackig grej där den kollar om gick av kant nyss, isåffall flytta tillbaka upp
+        //rätt längd och justera velocity.y
+
+
         verticalSpeedSet = false;
     }
 
@@ -58,7 +78,7 @@ public class WalkerMovementScript : MovementScript
         verticalSpeedSet = true;
     }
 
-    protected override void Move(Vector2 moveBy)
+    protected override Vector2 Move(Vector2 moveBy)
     {
         UpdateRayOrigins();
         GroundCheck();
@@ -77,6 +97,7 @@ public class WalkerMovementScript : MovementScript
         
 
         transform.Translate(moveBy, Space.World);
+        return moveBy;
     }
 
     protected override void HorizontalMove(ref Vector2 moveBy)
