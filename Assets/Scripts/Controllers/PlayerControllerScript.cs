@@ -27,7 +27,7 @@ public class PlayerControllerScript : MonoBehaviour
         if (Input.GetAxisRaw("Vertical") < 0)
         {
             playerMover.ignoreSemisolid = true;
-            playerMover.SetVerticalVelocity(-5);
+            playerMover.SetVerticalVelocity(-5);//gör så den inte kommer halvvägs igenom och därför börjar kollidera igen, känns bra i spelet. Alternativt sätt timer på hur länge ignoreSemisolids e true
         }
         else
             playerMover.ignoreSemisolid = false;

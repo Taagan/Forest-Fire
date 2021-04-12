@@ -13,8 +13,10 @@ public class PlayerMovementScript : WalkerMovementScript
     public float jumpVelocity = 20f;
     public float jumpHoldTime = .5f;//sekunder som man kan hålla nere hoppknappen för att få högre hopphöjd.
     public int airJumps = 1;
-
-    protected int airJumpsAvailable = 1;
+    
+    public int airJumpsAvailable = 1;
+    protected const float jumpCooldown = .05f;//liten timer för att förhindra omedelbara dubbelhopp
+    protected float jumpCooldownTimer = jumpCooldown;
     protected float currentFriction; //den som används i ekvationerna, byts mellan groundFriction och airFriction
 
     protected sbyte moveDir = 1;
@@ -25,13 +27,14 @@ public class PlayerMovementScript : WalkerMovementScript
     override protected void Start()
     {
         base.Start();
-
-
     }
 
     // Update is called once per frame
     override protected void Update()
     {
+        if (jumpCooldownTimer > 0)
+            jumpCooldownTimer -= Time.deltaTime;
+
         if (grounded)
             airJumpsAvailable = airJumps;
 
@@ -48,9 +51,12 @@ public class PlayerMovementScript : WalkerMovementScript
     public void Jump()
     {
         if(grounded || airJumpsAvailable > 0)
+        {
             SetVerticalVelocity(jumpVelocity);
-        if (!grounded)
-            airJumpsAvailable--;
+            if (!grounded)
+                airJumpsAvailable--;
+            jumpCooldownTimer = jumpCooldown;
+        }
     }
 
     public void Dash()
