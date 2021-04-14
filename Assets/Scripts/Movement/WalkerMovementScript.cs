@@ -14,8 +14,7 @@ public class WalkerMovementScript : MovementScript
     public bool affectedByGravity = true;
     public float gravityConstant = 9.82f;
     public float maxFallSpeed = 40f;
-
-
+    
     protected bool verticalSpeedSet = false; //hindrar gravitations påverkan en uppdatering efter att SetVerticalVelocity kallats
     protected float groundCheckRange = .01f;
 
@@ -43,11 +42,19 @@ public class WalkerMovementScript : MovementScript
         verticalSpeedSet = false;
     }
 
+    /// <summary>
+    /// negativ speed = vänster
+    /// </summary>
+    /// <param name="speed"></param>
     public void SetHorizontalVelocity(float speed)//negativt = vänster
     {
         velocity.x = speed;
     }
     
+    /// <summary>
+    /// negativ speed = neråt
+    /// </summary>
+    /// <param name="speed"></param>
     public void SetVerticalVelocity(float speed)//negativt = neråt
     {
         velocity.y = speed;
