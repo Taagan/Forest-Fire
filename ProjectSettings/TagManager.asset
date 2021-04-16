@@ -8,6 +8,7 @@ TagManager:
   - Checkpoint
   - Solid
   - Semisolid
+  - Options
   layers:
   - Default
   - TransparentFX
