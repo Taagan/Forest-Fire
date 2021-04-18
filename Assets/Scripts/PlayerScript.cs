@@ -28,6 +28,16 @@ public class PlayerScript : MonoBehaviour
         }
     }
 
+    public void Kill()
+    {
+        hitpoints = 0;
+        Debug.Log("Player killed");
+    }
+
+    public void Hurt(int damage)
+    {
+        hitpoints -= damage;
+    }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {

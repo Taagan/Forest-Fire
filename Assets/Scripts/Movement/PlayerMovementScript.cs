@@ -6,20 +6,27 @@ using UnityEngine;
 //om inte spelarens dash cooldown är nedräknad så händer inget.
 public class PlayerMovementScript : WalkerMovementScript
 {
-    public float groundFriction = .9f;//ny fart = fart du har + (fart du vill ha - fart du har) * (ground||air)Friction * Time.deltaTime
-    public float airFriction = .4f;
+    public float groundFriction = 10f;//ny fart = fart du har + (fart du vill ha - fart du har) * (ground||air)Friction * Time.deltaTime
+    public float airFriction = 2f;
 
     public float runSpeed = 10f;
-    public float jumpVelocity = 20f;
-    public float jumpHoldTime = .5f;//sekunder som man kan hålla nere hoppknappen för att få högre hopphöjd.
+    public float jumpVelocity = 10f;
+    public float jumpHoldTime = .2f;//sekunder som man kan hålla nere hoppknappen för att få högre hopphöjd.
     public int airJumps = 1;
-    
-    public int airJumpsAvailable = 1;
+
+    public float jumpFwdBoost = 5;//fart frammåt som man får om man rör vill röra sig medans man gör ett hopp
+
+    protected const float ignSemisolidsUpTime = .25f;
+    protected float ignSemisolidsTimer = 0f;
+    protected float duckThroughDownVel = -5f;//velocity applied to more smoothly pass through semisolids
+
+    protected float jumpingTimer = 0;
+    protected int airJumpsAvailable = 1;
     protected const float jumpCooldown = .05f;//liten timer för att förhindra omedelbara dubbelhopp
     protected float jumpCooldownTimer = jumpCooldown;
-    protected float currentFriction; //den som används i ekvationerna, byts mellan groundFriction och airFriction
-
+    
     protected sbyte moveDir = 1;
+    protected float wantedHorizontalSpeed = 0f;
     protected bool jumping = false;
     protected bool dashing = false;
 
@@ -32,31 +39,86 @@ public class PlayerMovementScript : WalkerMovementScript
     // Update is called once per frame
     override protected void Update()
     {
-        if (jumpCooldownTimer > 0)
-            jumpCooldownTimer -= Time.deltaTime;
+        Timers();
+
+        if (jumpingTimer > 0)
+            SetVerticalVelocity(jumpVelocity);
 
         if (grounded)
             airJumpsAvailable = airJumps;
-
-        //placeholderkod, lägg till mer avancerad rörelsefysik
-        if (moveDir != 0)
-            SetHorizontalVelocity(runSpeed * moveDir);
-        else
-            SetHorizontalVelocity(0);
         
+        if (moveDir != 0)
+            wantedHorizontalSpeed = runSpeed * moveDir;
+        else
+            wantedHorizontalSpeed = 0;
+        
+        Accelerate();
+
         base.Update();
         moveDir = 0;
+        jumping = false;
     }
 
-    public void Jump()
+    protected void Timers()
     {
-        if(grounded || airJumpsAvailable > 0)
+        if (jumpCooldownTimer > 0)
+            jumpCooldownTimer -= Time.deltaTime;
+
+        if (jumpingTimer > 0)
+            jumpingTimer -= Time.deltaTime;
+
+        if (ignSemisolidsTimer > 0)
         {
-            SetVerticalVelocity(jumpVelocity);
+            ignoreSemisolid = true;
+            ignSemisolidsTimer -= Time.deltaTime;
+        }
+        else
+            ignoreSemisolid = false;
+    }
+
+    //ny fart = fart du har + (fart du vill ha - fart du har) * (ground||air)Friction * Time.deltaTime
+    //kanske bra, kanske inte. Skulle kunna köra med en konstant acceleration annars.
+    protected void Accelerate()
+    {
+        if (wantedHorizontalSpeed == velocity.x)
+            return;
+
+        float currentFriction = grounded ? groundFriction : airFriction;
+        float deltaVel = (wantedHorizontalSpeed - velocity.x) * currentFriction * Time.deltaTime;
+        velocity.x += deltaVel;
+    }//BRa värden för denna är 10groundfriction och typ 2 airfriction
+
+    //i denna agerar friction som en konstant acceleration, står du på marken och vill framåt så accelererar du framåt med groundFriction/s
+    //kontrollerar så den inte accelererar över den gränsen. Dock så vill jag att man ska kunna ta sig över gränsen med andra abilities
+    
+    
+    public void StartJump()
+    {
+        if ((grounded || airJumpsAvailable > 0) && jumpCooldownTimer <= 0 && !jumping)
+        {
             if (!grounded)
                 airJumpsAvailable--;
             jumpCooldownTimer = jumpCooldown;
+            jumpingTimer = jumpHoldTime;
+
+            if (moveDir != 0)
+                velocity.x += moveDir * jumpFwdBoost;
         }
+    }
+
+    public void StopJump()
+    {
+        jumpingTimer = 0;
+    }
+
+    public void DuckThroughSemisolid()
+    {
+        if (!grounded)
+            return;
+
+        ignSemisolidsTimer = ignSemisolidsUpTime;
+        if (velocity.y > duckThroughDownVel)
+            velocity.y = duckThroughDownVel;
     }
 
     public void Dash()

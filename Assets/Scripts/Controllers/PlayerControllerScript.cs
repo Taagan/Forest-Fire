@@ -17,19 +17,23 @@ public class PlayerControllerScript : MonoBehaviour
     void Update()
     {
         float xAxis = Input.GetAxisRaw("Horizontal");
+        float yAxis = Input.GetAxisRaw("Vertical");
         if (xAxis != 0)
             playerMover.Move((sbyte)xAxis);
 
         if (Input.GetButtonDown("Jump"))
-            playerMover.Jump();
-            //playerMover.SetVerticalVelocity(playerMover.jumpVelocity);
-
-        if (Input.GetAxisRaw("Vertical") < 0)
         {
-            playerMover.ignoreSemisolid = true;
-            playerMover.SetVerticalVelocity(-5);//gör så den inte kommer halvvägs igenom och därför börjar kollidera igen, känns bra i spelet. Alternativt sätt timer på hur länge ignoreSemisolids e true
+            if (yAxis == -1)
+                playerMover.DuckThroughSemisolid();
+            else
+                playerMover.StartJump();
         }
-        else
-            playerMover.ignoreSemisolid = false;
+        else if (Input.GetButtonUp("Jump"))
+            playerMover.StopJump();
+    }
+
+    protected void StartJump()
+    {
+        
     }
 }
