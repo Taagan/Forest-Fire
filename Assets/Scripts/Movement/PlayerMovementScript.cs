@@ -16,6 +16,9 @@ public class PlayerMovementScript : WalkerMovementScript
 
     public float jumpFwdBoost = 5;//fart frammåt som man får om man rör vill röra sig medans man gör ett hopp
 
+    public bool bounceActive = false;
+    public float bounceMultiplier = 2f;
+
     protected const float ignSemisolidsUpTime = .25f;
     protected float ignSemisolidsTimer = 0f;
     protected float duckThroughDownVel = -5f;//velocity applied to more smoothly pass through semisolids
@@ -53,8 +56,17 @@ public class PlayerMovementScript : WalkerMovementScript
             wantedHorizontalSpeed = 0;
         
         Accelerate();
-
         base.Update();
+
+        //resets
+        if (collisions.right && velocity.x > 0)
+            velocity.x = 0;
+        else if (collisions.left && velocity.x < 0)
+            velocity.x = 0;
+
+        if (collisions.above && velocity.y > 0)
+            velocity.y = 0;
+
         moveDir = 0;
         jumping = false;
     }

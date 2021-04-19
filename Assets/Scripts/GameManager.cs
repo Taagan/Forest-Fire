@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     public GameObject checkpoint;
 
-    float[] playerStuff = new float[3];
+    int[] playerStuff = new int[3];
     // Start is called before the first frame update
     void Start()
     {

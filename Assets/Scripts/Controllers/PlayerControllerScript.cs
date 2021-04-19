@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerMovementScript))]
+[RequireComponent(typeof(PlayerScript))]
 public class PlayerControllerScript : MonoBehaviour
 {
     protected PlayerMovementScript playerMover;
+    protected PlayerScript playerScript;
 
     // Start is called before the first frame update
     void Start()
     {
         playerMover = GetComponent<PlayerMovementScript>();
+        playerScript = GetComponent<PlayerScript>();
     }
 
     // Update is called once per frame
@@ -18,6 +21,7 @@ public class PlayerControllerScript : MonoBehaviour
     {
         float xAxis = Input.GetAxisRaw("Horizontal");
         float yAxis = Input.GetAxisRaw("Vertical");
+
         if (xAxis != 0)
             playerMover.Move((sbyte)xAxis);
 
@@ -30,10 +34,14 @@ public class PlayerControllerScript : MonoBehaviour
         }
         else if (Input.GetButtonUp("Jump"))
             playerMover.StopJump();
-    }
 
-    protected void StartJump()
-    {
-        
+        if (Input.GetButtonDown("Block"))
+            playerScript.ActivateBubbleShield();
+        else if (Input.GetButtonUp("Block"))
+            playerScript.DeactivateBubbleShield();
+
+        //osäker om sköld och studs ska vara så direkt kopplade men nu är de det.
+        playerMover.bounceActive = playerScript.bubbleShieldActive;
     }
+    
 }
