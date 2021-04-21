@@ -62,7 +62,6 @@ public class PlayerScript : MonoBehaviour
             bubbleShieldActiveTimer -= dT;
         else if(bubbleShieldActiveTimer <= 0 && bubbleShieldActive)
             DeactivateBubbleShield();
-        
     }
 
     /// <summary>
