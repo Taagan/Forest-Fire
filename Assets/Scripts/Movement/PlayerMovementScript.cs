@@ -58,11 +58,31 @@ public class PlayerMovementScript : WalkerMovementScript
         Accelerate();
         base.Update();
 
-        //resets
+        //resets/bounces
         if (collisions.right && velocity.x > 0)
-            velocity.x = 0;
+        {
+            if (bounceActive)
+            {
+                float bounceBack = (velocity.x * Time.deltaTime - latestMovement.x) * -1 * bounceMultiplier;
+                transform.Translate(bounceBack, 0, 0);
+
+                velocity.x = -1 * bounceMultiplier * velocity.x;
+            }
+            else
+                velocity.x = 0;
+        }
         else if (collisions.left && velocity.x < 0)
-            velocity.x = 0;
+        {
+            if (bounceActive)
+            {
+                float bounceBack = (velocity.x * Time.deltaTime - latestMovement.x) * -1 * bounceMultiplier;
+                transform.Translate(bounceBack, 0, 0);
+
+                velocity.x = -1 * bounceMultiplier * velocity.x;
+            }    
+            else
+                velocity.x = 0;
+        }
 
         if (collisions.above && velocity.y > 0)
             velocity.y = 0;

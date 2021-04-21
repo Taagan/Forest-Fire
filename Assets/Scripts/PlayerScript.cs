@@ -13,8 +13,13 @@ public class PlayerScript : MonoBehaviour
     public int maxHitPoints { get; private set; } = 10;
     public int hitpoints;
 
+    public float bubbleShieldActiveTime = 1f;//sekunder som bubbelskölden är aktiv
+    public float bubbleShieldCooldown = 1f;//sekunder efter den deaktiverades som den måste vänta innan den kan aktiveras igen
     public int bubbleShieldMaxHP = 20;
     public bool bubbleShieldActive = false;
+
+    protected float bubbleShieldActiveTimer = 0;
+    protected float bubbleShieldCooldownTimer = 0;
     protected int currentBubbleShieldHp;
 
     [SerializeField]
@@ -31,18 +36,35 @@ public class PlayerScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        UpdateTimers();
+
+
+        //kontrollerar om bubbelskölden syns eller inte
         if (bubbleShieldActive)
         {
             if (!bubbleObject.activeSelf)
                 bubbleObject.SetActive(true);
         }
-        else
-        {
+        else if(!bubbleShieldActive)
             if (bubbleObject.activeSelf)
                 bubbleObject.SetActive(false);
-        }
     }
     
+    //samlingsställe för alla timernedräkningar och effekter de medför mest. Kallas i update()
+    protected void UpdateTimers()
+    {
+        float dT = Time.deltaTime;
+
+        if (bubbleShieldCooldownTimer > 0)
+            bubbleShieldCooldownTimer -= dT;
+
+        if (bubbleShieldActiveTimer > 0)
+            bubbleShieldActiveTimer -= dT;
+        else if(bubbleShieldActiveTimer <= 0 && bubbleShieldActive)
+            DeactivateBubbleShield();
+        
+    }
+
     /// <summary>
     /// använd för instakills. T.ex. Deathbox, eller spikar eller annat. Inte för vanlig skada från combat.
     /// </summary>
@@ -70,13 +92,23 @@ public class PlayerScript : MonoBehaviour
     
     public void ActivateBubbleShield()
     {
+        if (bubbleShieldActive || bubbleShieldCooldownTimer > 0)
+            return;
+
+        Debug.Log("ActivateBubbleShield");
+
         bubbleShieldActive = true;
         currentBubbleShieldHp = bubbleShieldMaxHP;
+        bubbleShieldActiveTimer = bubbleShieldActiveTime;
     }
 
     public void DeactivateBubbleShield()
     {
+        Debug.Log("DeactivateBubbleShield");
+
         bubbleShieldActive = false;
+        bubbleShieldCooldownTimer = bubbleShieldCooldown;
+        bubbleShieldActiveTimer = 0;
     }
 
     protected void DestroyBubbleShield()

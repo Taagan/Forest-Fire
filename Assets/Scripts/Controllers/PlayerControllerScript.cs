@@ -37,8 +37,6 @@ public class PlayerControllerScript : MonoBehaviour
 
         if (Input.GetButtonDown("Block"))
             playerScript.ActivateBubbleShield();
-        else if (Input.GetButtonUp("Block"))
-            playerScript.DeactivateBubbleShield();
 
         //osäker om sköld och studs ska vara så direkt kopplade men nu är de det.
         playerMover.bounceActive = playerScript.bubbleShieldActive;
