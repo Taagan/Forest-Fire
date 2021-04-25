@@ -13,6 +13,7 @@ public class PlayerMovementScript : WalkerMovementScript
     public float jumpVelocity = 10f;
     public float jumpHoldTime = .2f;//sekunder som man kan hålla nere hoppknappen för att få högre hopphöjd.
     public int airJumps = 1;
+    public float dashTime = .3f;//Sekunder som man dashar om den inte avbryts.
 
     public float jumpFwdBoost = 5;//fart frammåt som man får om man rör vill röra sig medans man gör ett hopp
 
@@ -27,7 +28,7 @@ public class PlayerMovementScript : WalkerMovementScript
     protected int airJumpsAvailable = 1;
     protected const float jumpCooldown = .05f;//liten timer för att förhindra omedelbara dubbelhopp
     protected float jumpCooldownTimer = jumpCooldown;
-    
+
     protected sbyte moveDir = 1;
     protected float wantedHorizontalSpeed = 0f;
     protected bool jumping = false;
@@ -153,7 +154,19 @@ public class PlayerMovementScript : WalkerMovementScript
             velocity.y = duckThroughDownVel;
     }
 
-    public void Dash()
+    //konstant snabb fart, studsbar, timer, ska gå att avsluta när som??
+    public void StartDash(sbyte dir)
+    {
+        if (dashing)
+            return;
+
+        
+
+        dashing = true;
+    }
+
+    //händer automatiskt när dashtimer är slut eller när controllern kör den.
+    public void StopDash()
     {
 
     }
