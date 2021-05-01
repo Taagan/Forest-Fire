@@ -9,6 +9,7 @@ TagManager:
   - Solid
   - Semisolid
   - Options
+  - Enemy
   layers:
   - Default
   - TransparentFX

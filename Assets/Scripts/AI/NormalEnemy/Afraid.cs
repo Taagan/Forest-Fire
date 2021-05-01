@@ -14,7 +14,7 @@ public class Afraid : Node
             Debug.Log("afraid");
             return NodeState.Success;
         }
-        Debug.Log("not afraid");
+        //Debug.Log("not afraid");
         return NodeState.Failure;
     }
 }

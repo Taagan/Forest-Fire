@@ -1,27 +1,32 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
-public class NormalEnemy : Enemy
+public class RangedEnemy : Enemy
 {
+    [SerializeField] private GameObject projectile;
     [SerializeField] private float maxStamina;
     [SerializeField] private float maxCourage;
+    [SerializeField] private float shotDelay;
     [SerializeField] private float restingAmountStamina = 50;
     [SerializeField] private float restingRateStamina = 0.2f;
     [SerializeField] private float attackRateStamina = 0.1f;
     [SerializeField] private float fleeRateStamina = 0.2f;
     [SerializeField] private float idleRateStamina = 0.4f;
+    [SerializeField] private bool canShoot;
     [SerializeField] private Slider staminaSlider;
     [SerializeField] private Sprite normalSprite;
     [SerializeField] private Sprite attackSprite;
     [SerializeField] private Sprite scaredSprite;
     [SerializeField] private Sprite tiredSprite;
 
+
+    private float timer = 0;
     private SpriteRenderer spriteR;
-    enum Skin { Normal, Attack, Scared, Tired };
+    enum Skin { Normal, Attack, Scared, Tired};
     Skin currentSkin;
 
     Node baseNode;
-    public NormalEnemy()
+    public RangedEnemy()
     {
         baseNode = new SelectorNode(this);
         SequenceNode attackMode = new SequenceNode(this);
@@ -69,39 +74,41 @@ public class NormalEnemy : Enemy
 
     public void FixedUpdate()
     {
-        CourageCheck();
         staminaSlider.value = stamina / maxStamina;
+        CourageCheck();
+        ShotCooldown();
         baseNode.Execute();
-        //Debug.Log(stamina);
+        Debug.Log(courage);
     }
 
     public override void Attack()
     {
-        stamina -= attackRateStamina;
         if (currentSkin != Skin.Attack)
         {
             currentSkin = Skin.Attack;
             UpdateSkin();
         }
         if (playerToTheLeft)
-        {
-            movement.SetHorizontalVelocity(-speed);
             this.transform.rotation = new Quaternion(this.transform.rotation.x, 180, this.transform.rotation.z, 0);
-        }
+
         else if (!playerToTheLeft)
-        {
-            movement.SetHorizontalVelocity(speed);
             this.transform.rotation = new Quaternion(this.transform.rotation.x, 0, this.transform.rotation.z, 0);
-        }
-        else
-        {
+
+        else { }
             //Player is on the same x-axis as you
+
+
+        stamina -= attackRateStamina;
+        if (canShoot)
+        {
+            Instantiate(projectile, this.transform.position, this.transform.rotation);
+            canShoot = false;
+            Debug.Log("shooting");
         }
     }
 
     public override void Flee()
     {
-        stamina -= fleeRateStamina;
         if (currentSkin != Skin.Scared)
         {
             currentSkin = Skin.Scared;
@@ -110,7 +117,7 @@ public class NormalEnemy : Enemy
         if (playerToTheLeft)
         {
             movement.SetHorizontalVelocity(speed);
-            this.transform.rotation = new Quaternion(this.transform.rotation.x, 0, this.transform.rotation.z,0);
+            this.transform.rotation = new Quaternion(this.transform.rotation.x, 0, this.transform.rotation.z, 0);
         }
         else if (!playerToTheLeft)
         {
@@ -121,6 +128,7 @@ public class NormalEnemy : Enemy
         {
             //Player is on the same x-axis as you
         }
+        stamina -= fleeRateStamina;
     }
 
     public override void Idle()
@@ -161,11 +169,12 @@ public class NormalEnemy : Enemy
 
     }
 
+
     private void CourageCheck()
     {
         if (playerClose)
         {
-            courage -= 0.1f;
+            courage -= 0.5f;
             if (courage < -maxCourage)
                 courage = -maxCourage;
         }
@@ -177,6 +186,20 @@ public class NormalEnemy : Enemy
         }
     }
 
+    private void ShotCooldown()
+    {
+        Debug.Log(timer);
+        if (!canShoot)
+        {
+            Debug.Log("reloading");
+            timer += Time.deltaTime;
+            if (timer >= shotDelay)
+            {
+                timer = 0;
+                canShoot = true;
+            }
+        }
+    }
 
     private void UpdateSkin()
     {
@@ -217,7 +240,8 @@ public class NormalEnemy : Enemy
     {
         if (collision.transform.tag == "Player")
         {
-            //collision.gameObject.GetComponent<PlayerScript>().TakeDamage(atkDamage);
+            //collision.gameObject.GetComponent<PlayerScript>().hurt
         }
     }
 }
+
