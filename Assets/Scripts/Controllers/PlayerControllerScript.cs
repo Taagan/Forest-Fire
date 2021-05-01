@@ -23,7 +23,10 @@ public class PlayerControllerScript : MonoBehaviour
         float yAxis = Input.GetAxisRaw("Vertical");
 
         if (xAxis != 0)
+        {
             playerMover.Move((sbyte)xAxis);
+            playerScript.facing = (int)Mathf.Sign(xAxis);
+        }
 
         if (Input.GetButtonDown("Jump"))
         {
@@ -38,8 +41,11 @@ public class PlayerControllerScript : MonoBehaviour
         if (Input.GetButtonDown("Block"))
             playerScript.ActivateBubbleShield();
 
+        if (Input.GetButtonDown("Attack1"))
+            playerMover.StartDash(new Vector2(xAxis, yAxis));
+
         //osäker om sköld och studs ska vara så direkt kopplade men nu är de det.
-        playerMover.bounceActive = playerScript.bubbleShieldActive;
+        //playerMover.bounceActive = playerScript.bubbleShieldActive;
     }
     
 }

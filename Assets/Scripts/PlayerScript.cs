@@ -18,6 +18,8 @@ public class PlayerScript : MonoBehaviour
     public int bubbleShieldMaxHP = 20;
     public bool bubbleShieldActive = false;
 
+    public int facing = 1;//1 = höger, -1 = vänster
+
     protected float bubbleShieldActiveTimer = 0;
     protected float bubbleShieldCooldownTimer = 0;
     protected int currentBubbleShieldHp;
