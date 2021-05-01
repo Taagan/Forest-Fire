@@ -240,7 +240,7 @@ public class RangedEnemy : Enemy
     {
         if (collision.transform.tag == "Player")
         {
-            //collision.gameObject.GetComponent<PlayerScript>().TakeDamage(atkDamage);
+            //collision.gameObject.GetComponent<PlayerScript>().hurt
         }
     }
 }
