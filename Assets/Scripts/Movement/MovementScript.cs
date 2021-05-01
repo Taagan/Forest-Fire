@@ -3,11 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Klass med Move-metod som då flyttar en entity och kollar kollisioner med sin collisionmask på vägen.
-/// </summary>
-
-
 [RequireComponent(typeof(BoxCollider2D))]
 public class MovementScript : MonoBehaviour
 {

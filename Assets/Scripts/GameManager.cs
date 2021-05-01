@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     public GameObject checkpoint;
 
-    float[] playerStuff = new float[3];
+    int[] playerStuff = new int[3];
     // Start is called before the first frame update
     void Start()
     {
@@ -26,7 +26,7 @@ public class GameManager : MonoBehaviour
         {
             Checkpoint();
         }
-        Death();
+        DeathCheck();
     }
 
 
@@ -52,9 +52,9 @@ public class GameManager : MonoBehaviour
     }
 
 
-    private void Death()
+    private void DeathCheck()
     {
-        if (player.GetComponent<PlayerScript>().hitpoints < 1)
+        if (player.GetComponent<PlayerScript>().hitpoints <= 0)
         {
             if (checkpoint)
                 LoadCheckPoint();

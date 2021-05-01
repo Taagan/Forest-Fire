@@ -3,33 +3,49 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerMovementScript))]
+[RequireComponent(typeof(PlayerScript))]
 public class PlayerControllerScript : MonoBehaviour
 {
     protected PlayerMovementScript playerMover;
+    protected PlayerScript playerScript;
 
     // Start is called before the first frame update
     void Start()
     {
         playerMover = GetComponent<PlayerMovementScript>();
+        playerScript = GetComponent<PlayerScript>();
     }
 
     // Update is called once per frame
     void Update()
     {
         float xAxis = Input.GetAxisRaw("Horizontal");
+        float yAxis = Input.GetAxisRaw("Vertical");
+
         if (xAxis != 0)
+        {
             playerMover.Move((sbyte)xAxis);
+            playerScript.facing = (int)Mathf.Sign(xAxis);
+        }
 
         if (Input.GetButtonDown("Jump"))
-            playerMover.Jump();
-            //playerMover.SetVerticalVelocity(playerMover.jumpVelocity);
-
-        if (Input.GetAxisRaw("Vertical") < 0)
         {
-            playerMover.ignoreSemisolid = true;
-            playerMover.SetVerticalVelocity(-5);//gör så den inte kommer halvvägs igenom och därför börjar kollidera igen, känns bra i spelet. Alternativt sätt timer på hur länge ignoreSemisolids e true
+            if (yAxis == -1)
+                playerMover.DuckThroughSemisolid();
+            else
+                playerMover.StartJump();
         }
-        else
-            playerMover.ignoreSemisolid = false;
+        else if (Input.GetButtonUp("Jump"))
+            playerMover.StopJump();
+
+        if (Input.GetButtonDown("Block"))
+            playerScript.ActivateBubbleShield();
+
+        if (Input.GetButtonDown("Attack1"))
+            playerMover.StartDash(new Vector2(xAxis, yAxis));
+
+        //osäker om sköld och studs ska vara så direkt kopplade men nu är de det.
+        //playerMover.bounceActive = playerScript.bubbleShieldActive;
     }
+    
 }

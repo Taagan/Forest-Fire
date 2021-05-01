@@ -14,7 +14,9 @@ public class WalkerMovementScript : MovementScript
     public bool affectedByGravity = true;
     public float gravityConstant = 9.82f;
     public float maxFallSpeed = 40f;
-    
+
+    protected Vector2 latestMovement = Vector2.zero;//sparar hur långt man flyttade sig efter varje update
+
     protected bool verticalSpeedSet = false; //hindrar gravitations påverkan en uppdatering efter att SetVerticalVelocity kallats
     protected float groundCheckRange = .01f;
 
@@ -38,7 +40,7 @@ public class WalkerMovementScript : MovementScript
             velocity.y = 0;
         }
 
-        Move(velocity * Time.deltaTime);
+        latestMovement = Move(velocity * Time.deltaTime);
         verticalSpeedSet = false;
     }
 
