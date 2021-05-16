@@ -8,23 +8,31 @@ using UnityEngine;
 public class PlayerMovementScript : WalkerMovementScript
 {
     public PlayerScript playerScript;
-
-    public float groundFriction = 10f;//ny fart = fart du har + (fart du vill ha - fart du har) * (ground||air)Friction * Time.deltaTime
-    public float airFriction = 2f;
-
+    SpriteRenderer sRenderer;
+    
     public float runSpeed = 10f;
     public float jumpVelocity = 10f;
     public float jumpHoldTime = .2f;//sekunder som man kan hålla nere hoppknappen för att få högre hopphöjd.
     public int airJumps = 1;
 
+    //lägre värde ger långsammare acceleration. såklart. Tänk lite i hur många frames i 60 fps accelerationen kommer ta från 0 till runspeed och vice versa.
+    public float groundAcceleration = 100f;//200 som standard ger ca 6 frames för att komma upp i runSpeed
+    public float airAcceleration = 50f;
+    public float groundDecceleration = 200f;
+    public float airDecceleration = 50f;
+    //om man är över runSpeed och inte vill vända helt utan fortf vill åt samma håll så saktar man ner med dessa värdena.
+    public float overSpeedGroundDecceleration = 100f;
+    public float overSpeedAirDecceleration = 25f;
+
     public float dashTime = .3f;//Sekunder som man dashar om den inte avbryts.
     public float dashVelocity = 40f;
-
+    public float bounceBoost = 1.5f;
+    public int maxBounces = 5;
     public float jumpFwdBoost = 5;//fart frammåt som man får om man rör vill röra sig medans man gör ett hopp
 
-    public bool bounceActive = false;
-    public float bounceMultiplier = 2f;
-
+    public int maxDashes = 1;
+    public int dashes { get; protected set; } = 1;
+    
     protected const float ignSemisolidsUpTime = .25f;
     protected float ignSemisolidsTimer = 0f;
     protected float duckThroughDownVel = -5f;//velocity applied to more smoothly pass through semisolids
@@ -40,17 +48,18 @@ public class PlayerMovementScript : WalkerMovementScript
     protected bool dashing = false;
     protected Vector2 dashDirection = Vector2.zero;
     protected float dashTimer;
-    protected int dashes = 1;
     
     protected float postDashFriction = 15f;
     protected float postDashTime = .4f;
     protected float postDashTimer = 0;
+    protected int bounces = 0;
 
     // Start is called before the first frame update
     override protected void Start()
     {
         base.Start();
         playerScript = GetComponent<PlayerScript>();
+        sRenderer = GetComponent<SpriteRenderer>();
     }
 
     // Update is called once per frame
@@ -60,20 +69,20 @@ public class PlayerMovementScript : WalkerMovementScript
         
         if (dashing)
         {
-            affectedByGravity = false;
             velocity = dashDirection * dashVelocity;
 
-            bounceActive = true;//BEHÖVER FINSLIPAS!
+            //lite sådär temporärt:
+            sRenderer.color = Color.blue;
         }
         else if (!dashing)
         {
-            affectedByGravity = true;
-            bounceActive = false;
+            sRenderer.color = Color.white;
 
             if (grounded)
             {
                 airJumpsAvailable = airJumps;
-                dashes = 1;
+                dashes = maxDashes;
+                bounces = 0;
             }
 
             if (moveDir != 0)
@@ -87,41 +96,28 @@ public class PlayerMovementScript : WalkerMovementScript
         base.Update();
 
         //resets & bounces
-        if (collisions.right && velocity.x > 0)
+        if (collisions.right && velocity.x > 0 || collisions.left && velocity.x < 0)
         {
-            if (bounceActive)
+            if (dashing && bounces < maxBounces)
             {
-                float bounceBack = (velocity.x * Time.deltaTime - latestMovement.x) * -1 * bounceMultiplier;
-                transform.Translate(bounceBack, 0, 0);
-
-                if (dashing)
-                {
-                    velocity.x *= -1;
-                    dashDirection.x *= -1;
-                    dashTimer = dashTime;
-                }
-                else
-                    velocity.x = -1 * bounceMultiplier * velocity.x;
-            }
-            else
-                velocity.x = 0;
-        }
-        else if (collisions.left && velocity.x < 0)
-        {
-            if (bounceActive)
-            {
-                float bounceBack = (velocity.x * Time.deltaTime - latestMovement.x) * -1 * bounceMultiplier;
-                transform.Translate(bounceBack, 0, 0);
+                float bounceBack = (velocity.x * Time.deltaTime - latestMovement.x) * -1;
+                velocity.x *= -1;
                 
-                if (dashing)
+                if(bounces == 0)
                 {
-                    velocity.x *= -1;
-                    dashDirection.x *= -1;
-                    dashTimer = dashTime;
+                    velocity.x *= bounceBoost;
+                    velocity.y *= bounceBoost;
+                    bounceBack *= bounceBoost;
                 }
-                else
-                    velocity.x = -1 * bounceMultiplier * velocity.x;
-            }    
+
+                transform.Translate(bounceBack, 0, 0);
+                dashDirection.x *= -1;
+                dashTimer = dashTime;
+
+                dashes = maxDashes;
+
+                bounces++;
+            }
             else
                 velocity.x = 0;
         }
@@ -161,33 +157,77 @@ public class PlayerMovementScript : WalkerMovementScript
             ignoreSemisolid = false;
     }
 
-    //ny fart = fart du har + (fart du vill ha - fart du har) * (ground||air)Friction * Time.deltaTime
-    //kanske bra, kanske inte. Skulle kunna köra med en konstant acceleration annars.
     protected void Accelerate()
     {
-        if (wantedHorizontalSpeed == velocity.x)
+        //räkna ut om accelererar eller deccelererar.
+        //om deccelererar mot att stanna eller för att vända så deccelererar man snabbare, annars deccelerar man lite långsammare.
+        //om deccelererar kolla om deccelererar à la överfartdecceleration.
+        //farten man accelererar/deccelerar med är ett konstant siffervärde
+        float dT = Time.deltaTime;
+
+        int wantedDir = wantedHorizontalSpeed != 0 ? (int)Mathf.Sign(wantedHorizontalSpeed) : 0;
+        int currentDir = velocity.x != 0 ? (int)Mathf.Sign(velocity.x) : 0;
+        
+        if (wantedDir == 0 && currentDir == 0)
             return;
-        float currentFriction;
 
-        if (postDashTimer > 0)
-            currentFriction = postDashFriction;
-        else
-            currentFriction = grounded ? groundFriction : airFriction;
+        //om siktar på noll
+        if(wantedDir == 0)
+        {
+            //alltid positiv version av velocity.x, räkna på den så och flippa till rätt håll sen bara.
+            float vel = velocity.x * currentDir;
+            float deccel = grounded ? groundDecceleration : airDecceleration;
+            vel -= deccel * dT;
 
-        float deltaVel = (wantedHorizontalSpeed - velocity.x) * currentFriction * Time.deltaTime;
-        velocity.x += deltaVel;
-    }//BRa värden för denna är 10groundfriction och typ 2 airfriction
+            if (vel < 0)
+                vel = 0;//kan orsaka problem kanske då detta gör att man står helt stilla en hel frame när man vänder håll, känn efter.
 
-    //i denna agerar friction som en konstant acceleration, står du på marken och vill framåt så accelererar du framåt med groundFriction/s
-    //kontrollerar så den inte accelererar över den gränsen. Dock så vill jag att man ska kunna ta sig över gränsen med andra abilities
-    
+            velocity.x = vel * currentDir;
+        }
+        //om ska vända sig så deccelererar man snabbare
+        else if(wantedDir == currentDir * -1)
+        {
+            float vel = velocity.x * currentDir;
+            float deccel = grounded ? groundDecceleration + groundAcceleration : airDecceleration + airAcceleration;
+            vel -= deccel * dT;
+
+            velocity.x = vel * currentDir;
+        }
+        //accelerera
+        else if (currentDir == 0 || (wantedHorizontalSpeed * wantedDir > velocity.x * currentDir && wantedDir == currentDir))
+        {
+            float vel = currentDir * velocity.x;
+            float accel = grounded ? groundAcceleration : airAcceleration;
+            vel += accel * dT;
+
+            if (vel > wantedHorizontalSpeed * wantedDir)
+                vel = wantedHorizontalSpeed * wantedDir;
+
+            velocity.x = vel * wantedDir;
+        }
+        //överfartsdeccelerera
+        else if(wantedDir == currentDir && velocity.x * currentDir > wantedHorizontalSpeed * wantedDir)
+        {
+            float vel = currentDir * velocity.x;
+            float deccel = grounded ? overSpeedGroundDecceleration : overSpeedAirDecceleration;
+            vel -= deccel * dT;
+
+            if (vel < wantedHorizontalSpeed * wantedDir)
+                vel = wantedHorizontalSpeed * wantedDir;
+
+            velocity.x = vel * wantedDir;
+        }
+        
+
+    }
+
     
     public void StartJump()
     {
         if ((grounded || airJumpsAvailable > 0) && jumpCooldownTimer <= 0 && !jumping)
         {
             if (dashing)
-                StopDash();
+                StopDash(false);
 
             if (!grounded)
                 airJumpsAvailable--;
@@ -233,16 +273,24 @@ public class PlayerMovementScript : WalkerMovementScript
         
         dashDirection = dir.normalized;
 
+        velocity = dashDirection * dashVelocity;
+
+        affectedByGravity = false;
         dashTimer = dashTime;
         dashing = true;
     }
 
     //händer automatiskt när dashtimer är slut eller när controllern kör den.
-    public void StopDash()
+    public void StopDash(bool postdashFriction = true)
     {
         dashing = false;
-        postDashTimer = postDashTime;
-        velocity.y *= .3f;
+        if (postdashFriction)
+        {
+            postDashTimer = postDashTime;
+            velocity.y *= .3f;
+        }
+
+        affectedByGravity = true;
     }
 
     public void Move(sbyte dir)//dir == -1 = vänster, dir == 1 = höger
