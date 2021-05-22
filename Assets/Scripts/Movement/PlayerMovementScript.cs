@@ -7,7 +7,7 @@ using UnityEngine;
 [RequireComponent(typeof(PlayerScript))]
 public class PlayerMovementScript : WalkerMovementScript
 {
-    public PlayerScript playerScript;
+    [HideInInspector] public PlayerScript playerScript;
     SpriteRenderer sRenderer;
     
     public float runSpeed = 10f;
@@ -226,13 +226,24 @@ public class PlayerMovementScript : WalkerMovementScript
     {
         if ((grounded || airJumpsAvailable > 0) && jumpCooldownTimer <= 0 && !jumping)
         {
+            bool dashJumped = false;
+
+            if (dashing && dashDirection.y > 0)
+                dashJumped = true;
+            else
+                jumpingTimer = jumpHoldTime;
+
             if (dashing)
-                StopDash(false);
+            {
+                StopDash(true);
+                if (dashJumped)
+                    velocity.y += jumpVelocity;
+            }
 
             if (!grounded)
                 airJumpsAvailable--;
+
             jumpCooldownTimer = jumpCooldown;
-            jumpingTimer = jumpHoldTime;
 
             if (moveDir != 0)
                 velocity.x += moveDir * jumpFwdBoost;

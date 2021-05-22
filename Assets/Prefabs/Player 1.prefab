@@ -224,6 +224,7 @@ GameObject:
   - component: {fileID: 6982978206632956968}
   - component: {fileID: 6982978206632956975}
   - component: {fileID: 6982978206632956974}
+  - component: {fileID: 968619761}
   m_Layer: 0
   m_Name: Player 1
   m_TagString: Player
@@ -286,8 +287,8 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 66673e6dc703c8c4588e51b1668957c0, type: 3}
-  m_Color: {r: 0.2784314, g: 0.2784314, b: 0.2784314, a: 1}
+  m_Sprite: {fileID: 21300000, guid: 120be822b48c1a144a030627cf6c9002, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -342,17 +343,22 @@ MonoBehaviour:
   gravityConstant: 40
   maxFallSpeed: 40
   playerScript: {fileID: 0}
-  groundFriction: 10
-  airFriction: 2
   runSpeed: 7
   jumpVelocity: 10
   jumpHoldTime: 0.1
   airJumps: 1
+  groundAcceleration: 100
+  airAcceleration: 50
+  groundDecceleration: 200
+  airDecceleration: 50
+  overSpeedGroundDecceleration: 100
+  overSpeedAirDecceleration: 25
   dashTime: 0.3
-  dashVelocity: 40
+  dashVelocity: 25
   bounceBoost: 1.5
   maxBounces: 5
   jumpFwdBoost: 5
+  maxDashes: 1
 --- !u!114 &6982978206632956968
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -365,7 +371,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3de671f8553839743a2c212b4533c819, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attack1: {fileID: 0}
+  dashAimTime: 1
 --- !u!114 &6982978206632956975
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -404,3 +410,19 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 0
+--- !u!114 &968619761
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6982978206632956969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 874ec2e98464991448b484e040724feb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  projectile: {fileID: 2444116845833242680, guid: 3e24f00e41ec71840946f0804844c9e1,
+    type: 3}
+  projectiles: 10
+  spread: 30

@@ -18,16 +18,24 @@ public class PlayerScript : MonoBehaviour
 
     public GameObject currentCheckpoint;
 
+    protected SpriteRenderer sRenderer;
+
     // Start is called before the first frame update
     void Start()
     {
         hitpoints = maxHitPoints;
+        sRenderer = GetComponent<SpriteRenderer>();
     }
 
     // Update is called once per frame
     void Update()
     {
         UpdateTimers();
+
+        if (facing == 1 && sRenderer.flipX == true)
+            sRenderer.flipX = false;
+        else if (facing == -1 && sRenderer.flipX == false)
+            sRenderer.flipX = true;
         
     }
     

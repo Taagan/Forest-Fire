@@ -4,12 +4,13 @@ using UnityEngine;
 
 [RequireComponent(typeof(PlayerMovementScript))]
 [RequireComponent(typeof(PlayerScript))]
+[RequireComponent(typeof(PlayerAttackScript))]
 public class PlayerControllerScript : MonoBehaviour
 {
     protected PlayerMovementScript playerMover;
     protected PlayerScript playerScript;
 
-    public AttackScript attack1;
+    PlayerAttackScript attack;
     //public AttackScript attack2;
 
     DashArrowScript dashArrow;
@@ -28,7 +29,7 @@ public class PlayerControllerScript : MonoBehaviour
     {
         playerMover = GetComponent<PlayerMovementScript>();
         playerScript = GetComponent<PlayerScript>();
-
+        attack = GetComponent<PlayerAttackScript>();
         dashArrow = GetComponentInChildren<DashArrowScript>();
     }
 
@@ -77,12 +78,12 @@ public class PlayerControllerScript : MonoBehaviour
         else if (Input.GetButtonUp("Dash") && dashAiming)
             StopDashPause();
 
-        //if (Input.GetButtonDown("Attack2"))
-        //{
-        //    attack1.Attack();
-        //    if (dashAiming)
-        //        StopDashPause(true);
-        //}
+        if (Input.GetButtonDown("Attack1"))
+        {
+            attack.Attack(playerScript.facing);
+            if (dashAiming)
+                StopDashPause(true);
+        }
 
         if (currentInput.magnitude != 0 && dashAiming)
             dashArrowAim = signCurrentInput;
