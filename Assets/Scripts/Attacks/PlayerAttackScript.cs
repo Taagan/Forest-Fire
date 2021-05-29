@@ -15,10 +15,13 @@ public class PlayerAttackScript : MonoBehaviour
 
     LayerMask layerMask;
 
+    PlayerMovementScript playerMovement;
+
     // Start is called before the first frame update
     void Start()
     {
         layerMask = LayerMask.GetMask(collisionLayers);
+        playerMovement = GetComponent<PlayerMovementScript>();
     }
 
     public void Attack(int dir)
@@ -43,6 +46,7 @@ public class PlayerAttackScript : MonoBehaviour
             float randSpeed = Random.value * (maxVelocity - minVelocity) + minVelocity;
             vel *= randSpeed;
             vel.x *= dir;//flippa x-fart om dir är åt vänster
+            vel.x += playerMovement.velocity.x;
 
             float life = Random.value * (maxLifeTime - minLifeTime) + minLifeTime;
 
