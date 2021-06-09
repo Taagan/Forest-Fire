@@ -10,9 +10,9 @@ public class MovementScript : MonoBehaviour
     
     protected int horizontalRays = 5;
     protected int verticalRays = 5;
-    protected float bottomRayHeight = .2f;//höjd upp ifrån botten + skinwidth som den första horisontalla rayen castas från. För att underlätta backklättring
+    protected float bottomRayHeight = .05f;//höjd upp ifrån botten + skinwidth som den första horisontalla rayen castas från. För att underlätta backklättring
 
-    protected float skinDepth = .15f;//hur djupt inne i hitboxen som raycast-raysen börjar.
+    protected float skinDepth = .05f;//hur djupt inne i hitboxen som raycast-raysen börjar.
 
     [HideInInspector]
     public bool ignoreSemisolid = false;//låter en falla genom semisolider, används när man ska duck-hoppa genom en semisolid plattform, per platformingstandard
@@ -64,6 +64,7 @@ public class MovementScript : MonoBehaviour
                 {
                     moveBy.x = (hit.distance - skinDepth) * dir;
                     rayLength = hit.distance;
+
                     if (dir >= 1)
                         collisions.right = true;
                     else
@@ -98,8 +99,12 @@ public class MovementScript : MonoBehaviour
                     if (dir <= 0)
                     {
                         collisions.below = true;
-                        if (Vector2.Angle(hit.normal, Vector2.up) != 0)
+                        float angle = Vector2.Angle(hit.normal, Vector2.up);
+                        if (angle != 0)
+                        {
                             collisions.standingOnSlope = true;
+                            collisions.slopeAngle = angle;
+                        }
                     }
                     else
                         collisions.above = true;
@@ -133,13 +138,15 @@ public class MovementScript : MonoBehaviour
     public struct CollisionInfo
     {
         public bool above, below, left, right;
-
         public bool standingOnSlope;
+        public float slopeAngle;
+        
 
         public void reset()
         {
             above = below = left = right = false;
             standingOnSlope = false;
+            slopeAngle = 0;
         }
     }
 }

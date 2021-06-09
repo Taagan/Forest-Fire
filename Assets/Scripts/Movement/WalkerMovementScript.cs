@@ -12,11 +12,10 @@ public class WalkerMovementScript : MovementScript
     public bool grounded = false;
     
     public bool affectedByGravity = true;
-    public float gravityConstant = 9.82f;
+    public float gravityConstant = 40f;
     public float maxFallSpeed = 40f;
 
     protected Vector2 latestMovement = Vector2.zero;//sparar hur långt man flyttade sig efter varje update
-
     protected bool verticalSpeedSet = false; //hindrar gravitations påverkan en uppdatering efter att SetVerticalVelocity kallats
 
     override protected void Start()
@@ -35,14 +34,21 @@ public class WalkerMovementScript : MovementScript
         else if (affectedByGravity && collisions.below && !verticalSpeedSet)
         {
             if (collisions.standingOnSlope)
-                velocity.y = -gravityConstant;
+            {//Den här raden ökar gravitationsfarten om man redan står på marken och det är en nedförsbacke proportionerligt
+                velocity.y = -(Mathf.Sin(collisions.slopeAngle * Mathf.Deg2Rad) * Mathf.Abs(velocity.x) + 2);//+2 som felmarginal. 
+            }
             else
                 velocity.y = -2;
         }
 
         latestMovement = Move(velocity * Time.deltaTime);
-        grounded = collisions.below;
+        SetGrounded(collisions.below);
         verticalSpeedSet = false;
+    }
+
+    protected virtual void SetGrounded(bool value)
+    {
+        grounded = value;
     }
 
     /// <summary>
