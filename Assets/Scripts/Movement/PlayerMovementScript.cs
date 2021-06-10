@@ -46,6 +46,18 @@ public class PlayerMovementScript : WalkerMovementScript
     public float dashVelocity = 20f;
     public int maxDashes = 1;
     public int dashes { get; protected set; } = 1;
+
+    [Space(10)]
+    [Header("               Wall things")]
+    [Tooltip("tid som man håller sig stilla efter man börjat hålla sig till en vägg")]
+    public float wallGlideHoldTime = 1.5f;
+    [Tooltip("Tid som det tar för spelaren att släppa väggen efter att man slutar ge input mot väggen")]
+    public float wallGlideReleaseTime = .5f;
+    public float wallJumpOutVelocity = 12f;//velocity ut från väggen när man vägghoppar
+    public float wallGlideGravity = 10;
+    public float wallGlideMaxVelocity = 7;
+    public float wallGlideForceDownGravity = 13;
+    public float wallGlideForceDownMaxVelocity = 10;
     
     protected const float ignSemisolidsUpTime = .25f;
     protected float ignSemisolidsTimer = 0f;
@@ -68,6 +80,11 @@ public class PlayerMovementScript : WalkerMovementScript
     protected int moveDirLast = 1;
     protected int moveDir = 1;
     protected float wantedHorizontalSpeed = 0f;
+
+    public int wallGlideWallDir { get; protected set; } = 1;
+    protected float wallGlideHoldTimer = 0;
+    protected float wallGlideReleaseTimer = 0;
+    protected bool wallGlideDownForced = false;
 
     protected int dashDir = 1;
     protected float dashTimer;
@@ -113,9 +130,15 @@ public class PlayerMovementScript : WalkerMovementScript
                 sRenderer.color = noneColor;
 
                 if (!grounded)
+                {
                     movementState = MovementState.falling;
+                    goto case MovementState.falling;
+                }
                 else if (moveDir != 0)
+                {
                     movementState = MovementState.running;
+                    goto case MovementState.running;
+                }
 
                 StandardMovementUpdate();
                 break;
@@ -124,9 +147,21 @@ public class PlayerMovementScript : WalkerMovementScript
                 sRenderer.color = fallingColor;
 
                 if (grounded && moveDir == 0)
+                {
                     movementState = MovementState.none;
+                    goto case MovementState.none;
+                }
                 else if (grounded)
+                {
                     movementState = MovementState.running;
+                    goto case MovementState.running;
+                }
+
+                if (WallGlideCheck())
+                {
+                    StartWallGlide();
+                    goto case MovementState.wall_gliding;
+                }
 
                 StandardMovementUpdate();
                 break;
@@ -135,15 +170,43 @@ public class PlayerMovementScript : WalkerMovementScript
                 sRenderer.color = speedColor[speedLevel];
 
                 if (!grounded)
+                {
                     movementState = MovementState.falling;
+                    goto case MovementState.falling;
+                }
                 else if (moveDir == 0)
+                {
                     movementState = MovementState.none;
+                    goto case MovementState.none;
+                }
 
                 StandardMovementUpdate();
                 break;
 
             case MovementState.wall_gliding:
                 sRenderer.color = wall_glidingColor;
+
+                if (grounded)//om grounded är man inte längre på väggen ju..
+                {
+                    StopWallGlide();
+                    movementState = MovementState.none;
+                    goto case MovementState.none;
+                }
+
+                if (wallGlideHoldTimer <= 0 && !wallGlideDownForced)//glid neråt
+                {
+                    velocity.y -= wallGlideGravity * Time.deltaTime;
+                    if (velocity.y < -wallGlideMaxVelocity)
+                        velocity.y = -wallGlideMaxVelocity;
+                }
+                else if (wallGlideDownForced)
+                    wallGlideDownForced = false;
+
+                //kolla om ger input mot väggen, isåfall håll kvar, annars börja släppa den.
+                if (moveDir != wallGlideWallDir && wallGlideReleaseTimer <= 0)
+                    wallGlideReleaseTimer = wallGlideReleaseTime;
+                else if (moveDir == wallGlideWallDir && wallGlideReleaseTimer > 0)
+                    wallGlideReleaseTimer = 0;
 
                 break;
 
@@ -179,6 +242,7 @@ public class PlayerMovementScript : WalkerMovementScript
         moveDirLast = moveDir;
         moveDir = 0;
     }
+    
 
     protected void StandardMovementUpdate()
     {
@@ -188,7 +252,6 @@ public class PlayerMovementScript : WalkerMovementScript
             loseSpeedTimer = 0;
 
         //Kolla om vänder eller stannar så ska forgivnessTimern starta och man kan då inom tidsramen kunna få tillbaka sin fart åt det hållet.
-        //SpeedLevel resettas till noll om man stannar eller vänder och återges när man ger input i rätt riktning igen.
         if (speedLevel > 0 && forgivnessTimer <= 0)
         {
             if (moveDirLast == moveDir * -1 || moveDir == 0)//om vänder eller stannar starta förlåtelsetiden
@@ -228,6 +291,16 @@ public class PlayerMovementScript : WalkerMovementScript
     protected void Timers()
     {
         float dT = Time.deltaTime;
+
+        if (wallGlideHoldTimer > 0)
+            wallGlideHoldTimer -= dT;
+
+        if(wallGlideReleaseTimer > 0)
+        {
+            wallGlideReleaseTimer -= dT;
+            if (wallGlideReleaseTimer <= 0)
+                StopWallGlide();
+        }
 
         if(loseSpeedTimer > 0)
         {
@@ -308,7 +381,7 @@ public class PlayerMovementScript : WalkerMovementScript
 
             velocity.x = vel * currentDir;
         }
-        //om ska vända sig så deccelererar man snabbare
+        //om ska vända sig så deccelererar man snabbare, kanske inte bör vara så egentligen. Blir lite för kontrollerbart i höga farter.
         //else if(wantedDir == currentDir * -1)
         //{
         //    float vel = velocity.x * currentDir;
@@ -343,18 +416,83 @@ public class PlayerMovementScript : WalkerMovementScript
         }
     }
     
+    protected bool WallGlideCheck()
+    {
+        if (moveDir == 0)
+            return false;
+
+        if (moveDir == 1 && collisions.right || moveDir == -1 && collisions.left && velocity.y < 0)
+        {
+            wallGlideWallDir = moveDir;
+            return true;
+        }
+
+        return false;
+    }
+
+    protected void StartWallGlide()
+    {
+        wallGlideHoldTimer = wallGlideHoldTime;
+
+        velocity.y = 0;
+        affectedByGravity = false;
+        movementState = MovementState.wall_gliding;
+    }
+
+    public void StopWallGlide()
+    {
+        if (movementState != MovementState.wall_gliding)
+            return;
+        affectedByGravity = true;
+        movementState = MovementState.falling;
+    }
+
+    public void WallGlideForceDown() //ökar acceleration och maxfart neråt under en uppdateringsloop
+    {
+        if (movementState != MovementState.wall_gliding || wallGlideDownForced)
+            return;
+
+        wallGlideDownForced = true;
+
+        if (wallGlideHoldTimer > 0)
+            wallGlideHoldTimer = 0;
+
+        if(velocity.y > -wallGlideForceDownMaxVelocity)
+        {
+            velocity.y -= wallGlideForceDownGravity * Time.deltaTime;
+            if (velocity.y < wallGlideForceDownMaxVelocity)
+                velocity.y = -wallGlideForceDownMaxVelocity;
+        }
+
+    }
+
+    protected void WallJump()
+    {
+        //Set velocity.x bort från väggen ett värde
+        velocity.x = wallGlideWallDir * -1 * wallJumpOutVelocity;
+        velocity.y = jumpVelocity;
+
+        StopWallGlide();
+        jumpingTimer = jumpHoldTime;
+        jumpCooldownTimer = jumpCooldown;
+        movementState = MovementState.jumping;
+    }
+
+    
+
     public void StartJump()
     {
-        if ((grounded || airJumpsAvailable > 0) && jumpCooldownTimer <= 0 && movementState != MovementState.jumping)
+        if (movementState == MovementState.wall_gliding)
+            WallJump();
+        else if ((grounded || airJumpsAvailable > 0) && jumpCooldownTimer <= 0 && movementState != MovementState.jumping)
         {    
-            jumpingTimer = jumpHoldTime;
-
             if (movementState == MovementState.dashing)
                 StopDash();
 
             if (!grounded)
                 airJumpsAvailable--;
 
+            jumpingTimer = jumpHoldTime;
             jumpCooldownTimer = jumpCooldown;
             movementState = MovementState.jumping;
 

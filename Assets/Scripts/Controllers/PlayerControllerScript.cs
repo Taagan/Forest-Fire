@@ -27,20 +27,25 @@ public class PlayerControllerScript : MonoBehaviour
     void Update()
     {
         currentInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-        Vector2 signCurrentInput = new Vector2(Mathf.Sign(currentInput.x), Mathf.Sign(currentInput.y));//uselt namn men kommer inte på bättre
+        Vector2 signedCurrentInput = new Vector2(Mathf.Sign(currentInput.x), Mathf.Sign(currentInput.y));//uselt namn men kommer inte på bättre
 
         if (currentInput.x == 0)
-            signCurrentInput.x = 0;
+            signedCurrentInput.x = 0;
         if (currentInput.y == 0)
-            signCurrentInput.y = 0;
+            signedCurrentInput.y = 0;
 
 
-        if (signCurrentInput.x != 0)
+        if (signedCurrentInput.x != 0)
         {
-            playerMover.Move((sbyte)signCurrentInput.x);
-            playerScript.facing = (int)signCurrentInput.x;
+            playerMover.Move((sbyte)signedCurrentInput.x);
+            if (playerMover.movementState == PlayerMovementScript.MovementState.wall_gliding || playerMover.movementState == PlayerMovementScript.MovementState.hanging)
+                playerScript.facing = playerMover.wallGlideWallDir * -1;
+            else
+                playerScript.facing = (int)signedCurrentInput.x;
         }
-        
+
+        if (playerMover.movementState == PlayerMovementScript.MovementState.wall_gliding && signedCurrentInput.y == -1)
+            playerMover.WallGlideForceDown();
 
         if (Input.GetButtonDown("Jump"))
         {
@@ -56,7 +61,7 @@ public class PlayerControllerScript : MonoBehaviour
 
         //fixa namngivning och så..
         if (Input.GetButtonDown("Dash"))
-            playerMover.StartDash((int)signCurrentInput.x);
+            playerMover.StartDash((int)signedCurrentInput.x);
 
         if (Input.GetButtonDown("Attack1"))
         {
