@@ -59,7 +59,7 @@ public class PlayerMovementScript : WalkerMovementScript
 
     protected int forgivnessLevel = 0;//level of speed to get back to if forgiven
     protected int forgivnessDir = 1;//riktningen som man kan få tillbaka sin fart åt.
-    protected float forgivnessTime = .10f;//tid som man kan låta bli att ge input utan att man förlorar sin speedlevel
+    protected float forgivnessTime = .4f;//tid som man kan låta bli att ge input utan att man förlorar sin speedlevel
     protected float forgivnessTimer = 0;
     protected float loseSpeedThreshold = .4f;//andel av minfarten man måste hålla sig över för att inte förlora farten.
     protected float loseSpeedTime = .2f;//förlora speedlevel om man har stått stilla så här länge.
@@ -75,16 +75,13 @@ public class PlayerMovementScript : WalkerMovementScript
 
     //Colors, för debug mest kanske. Om det inte blir snyggt nog att ha i spelet
     private Color noneColor = Color.white;
-    private Color runningColor = Color.white;
     private Color wall_glidingColor = Color.blue;
     private Color hangingColor = Color.grey; //hänger på väggkant
     private Color jumpingColor = Color.white;
     private Color fallingColor = Color.white;
     private Color dashingColor = Color.cyan;
 
-    private Color speedColorOne = Color.white;
-    private Color speedColorTwo = Color.magenta;
-    private Color speedColorThree = Color.red;
+    private Color[] speedColor = new Color[] { Color.white, Color.magenta, Color.red };
 
     // Start is called before the first frame update
     override protected void Start()
@@ -135,7 +132,7 @@ public class PlayerMovementScript : WalkerMovementScript
                 break;
 
             case MovementState.running:
-                sRenderer.color = runningColor;
+                sRenderer.color = speedColor[speedLevel];
 
                 if (!grounded)
                     movementState = MovementState.falling;
@@ -202,13 +199,10 @@ public class PlayerMovementScript : WalkerMovementScript
                 speedLevel = 0;
             }
         }
-        else if (forgivnessTimer > 0 && moveDir != 0)
+        else if (forgivnessTimer > 0 && moveDir == forgivnessDir)//forgiven
         {
-            if (moveDir == forgivnessDir)//Forgiven!
-            {
-                forgivnessTimer = 0;
-                speedLevel = forgivnessLevel;
-            }
+            forgivnessTimer = 0;
+            speedLevel = forgivnessLevel;
         }
 
         Accelerate();
@@ -302,7 +296,7 @@ public class PlayerMovementScript : WalkerMovementScript
             return;
 
         //om siktar på noll
-        if(wantedDir == 0)
+        if(wantedDir == 0 || wantedDir == currentDir * -1)
         {
             //alltid positiv version av velocity.x, räkna på den så och flippa till rätt håll sen bara.
             float vel = velocity.x * currentDir;
@@ -315,14 +309,14 @@ public class PlayerMovementScript : WalkerMovementScript
             velocity.x = vel * currentDir;
         }
         //om ska vända sig så deccelererar man snabbare
-        else if(wantedDir == currentDir * -1)
-        {
-            float vel = velocity.x * currentDir;
-            float deccel = grounded ? groundDecceleration + groundAcceleration : airDecceleration + airAcceleration;
-            vel -= deccel * dT;
+        //else if(wantedDir == currentDir * -1)
+        //{
+        //    float vel = velocity.x * currentDir;
+        //    float deccel = grounded ? groundDecceleration + groundAcceleration : airDecceleration + airAcceleration;
+        //    vel -= deccel * dT;
 
-            velocity.x = vel * currentDir;
-        }
+        //    velocity.x = vel * currentDir;
+        //}
         //accelerera
         else if (currentDir == 0 || (wantedHorizontalSpeed * wantedDir > velocity.x * currentDir && wantedDir == currentDir))
         {
@@ -347,8 +341,6 @@ public class PlayerMovementScript : WalkerMovementScript
 
             velocity.x = vel * wantedDir;
         }
-
-
     }
     
     public void StartJump()
