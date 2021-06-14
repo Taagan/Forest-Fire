@@ -44,8 +44,15 @@ public class PlayerControllerScript : MonoBehaviour
                 playerScript.facing = (int)signedCurrentInput.x;
         }
 
-        if (playerMover.movementState == PlayerMovementScript.MovementState.wall_gliding && signedCurrentInput.y == -1)
-            playerMover.WallGlideForceDown();
+        if (playerMover.movementState == PlayerMovementScript.MovementState.wall_gliding)
+        {
+            if (signedCurrentInput.y == -1 && Input.GetButtonDown("Jump"))
+                playerMover.StopWallGlide();
+            else if (signedCurrentInput.y == -1)
+                playerMover.WallGlideForceDown();
+
+        }
+        
 
         if (Input.GetButtonDown("Jump"))
         {
