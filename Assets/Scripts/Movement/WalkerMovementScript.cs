@@ -9,16 +9,14 @@ public class WalkerMovementScript : MovementScript
     [HideInInspector]
     public Vector2 velocity = Vector2.zero;
     [HideInInspector]
-    public bool grounded;
+    public bool grounded = false;
     
     public bool affectedByGravity = true;
-    public float gravityConstant = 9.82f;
+    public float gravityConstant = 40f;
     public float maxFallSpeed = 40f;
 
     protected Vector2 latestMovement = Vector2.zero;//sparar hur långt man flyttade sig efter varje update
-
     protected bool verticalSpeedSet = false; //hindrar gravitations påverkan en uppdatering efter att SetVerticalVelocity kallats
-    protected float groundCheckRange = .01f;
 
     override protected void Start()
     {
@@ -27,8 +25,6 @@ public class WalkerMovementScript : MovementScript
 
     protected virtual void Update()
     {
-        GroundCheck();
-
         if (affectedByGravity && !collisions.below && !verticalSpeedSet)
         {
             velocity.y -= gravityConstant * Time.deltaTime;
@@ -37,11 +33,22 @@ public class WalkerMovementScript : MovementScript
         }
         else if (affectedByGravity && collisions.below && !verticalSpeedSet)
         {
-            velocity.y = 0;
+            if (collisions.standingOnSlope)
+            {//Den här raden ökar gravitationsfarten om man redan står på marken och det är en nedförsbacke proportionerligt
+                velocity.y = -(Mathf.Sin(collisions.slopeAngle * Mathf.Deg2Rad) * Mathf.Abs(velocity.x) + 2);//+2 som felmarginal. 
+            }
+            else
+                velocity.y = -2;
         }
 
         latestMovement = Move(velocity * Time.deltaTime);
+        SetGrounded(collisions.below);
         verticalSpeedSet = false;
+    }
+
+    protected virtual void SetGrounded(bool value)
+    {
+        grounded = value;
     }
 
     /// <summary>
@@ -62,18 +69,6 @@ public class WalkerMovementScript : MovementScript
         velocity.y = speed;
         verticalSpeedSet = true;
     }
+    
 
-    //FUNKAR
-    protected void GroundCheck()
-    {
-        grounded = false;
-        
-        RaycastHit2D leftHit = Physics2D.Raycast(rayOrigins.absBottomLeft + Vector2.up * 2 * skinDepth + Vector2.right * .01f, Vector2.down, groundCheckRange + 2 * skinDepth, collisionMask);
-        RaycastHit2D rightHit = Physics2D.Raycast(rayOrigins.absBottomRight + Vector2.up * 2 * skinDepth - Vector2.right * .01f, Vector2.down, groundCheckRange + 2 * skinDepth, collisionMask);
-
-        //Debug.DrawRay(rayOrigins.absBottomRight + Vector2.up * 2 * skinDepth - Vector2.right * .01f, Vector2.down * (groundCheckRange + 2 * skinDepth), Color.blue);
-        //Debug.DrawRay(rayOrigins.absBottomLeft + Vector2.up * 2 * skinDepth + Vector2.right * .01f, Vector2.down * (groundCheckRange + 2 * skinDepth), Color.blue);
-
-        grounded = leftHit || rightHit;
-    }
 }

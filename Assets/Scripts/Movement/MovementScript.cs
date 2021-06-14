@@ -10,6 +10,7 @@ public class MovementScript : MonoBehaviour
     
     protected int horizontalRays = 5;
     protected int verticalRays = 5;
+    protected float bottomRayHeight = .05f;//höjd upp ifrån botten + skinwidth som den första horisontalla rayen castas från. För att underlätta backklättring
 
     protected float skinDepth = .05f;//hur djupt inne i hitboxen som raycast-raysen börjar.
 
@@ -42,6 +43,7 @@ public class MovementScript : MonoBehaviour
         UpdateRayOrigins();//ooptimiserat
         VerticalMove(ref moveBy);
         transform.Translate(0, moveBy.y, 0, Space.World);
+        
         return moveBy;
     }
     
@@ -49,6 +51,7 @@ public class MovementScript : MonoBehaviour
     {                           //criteria kanske e lite överflödig, men gör så jag kan ignorera en rays resultat beroende på vilket kriterie som jag vill, används i WalkerMoveScript t. ex.
         sbyte dir = (sbyte)Mathf.Sign(moveBy.x);
         Vector2 rStart = dir == 1 ? rayOrigins.bottomRight : rayOrigins.bottomLeft;
+        rStart.y += bottomRayHeight;
         float rayLength = Mathf.Abs(moveBy.x) + skinDepth;
 
         for (int i = 0; i < horizontalRays; i++)
@@ -61,6 +64,7 @@ public class MovementScript : MonoBehaviour
                 {
                     moveBy.x = (hit.distance - skinDepth) * dir;
                     rayLength = hit.distance;
+
                     if (dir >= 1)
                         collisions.right = true;
                     else
@@ -74,8 +78,13 @@ public class MovementScript : MonoBehaviour
     protected virtual void VerticalMove(ref Vector2 moveBy)
     {
         sbyte dir = (sbyte)Mathf.Sign(moveBy.y);
-        Vector2 rStart = dir == 1 ? rayOrigins.topLeft : rayOrigins.bottomLeft;
-        float rayLength = Mathf.Abs(moveBy.y) + skinDepth;
+        Vector2 rStart = dir == 1 ? rayOrigins.topLeft : rayOrigins.bottomLeft + Vector2.up * bottomRayHeight;
+
+        float currentSkinDepth = skinDepth;
+        if (dir == -1)
+            currentSkinDepth += bottomRayHeight;
+
+        float rayLength = Mathf.Abs(moveBy.y) + currentSkinDepth;
 
         for (int i = 0; i < verticalRays; i++)
         {
@@ -85,11 +94,17 @@ public class MovementScript : MonoBehaviour
             {
                 if(!(hit.transform.CompareTag("Semisolid") && (dir > 0 || ignoreSemisolid)))//om den är semisolid, ignorera den i vissa fall
                 {
-                    moveBy.y = (hit.distance - skinDepth) * dir;
+                    moveBy.y = (hit.distance - currentSkinDepth) * dir;
                     rayLength = hit.distance;
                     if (dir <= 0)
                     {
                         collisions.below = true;
+                        float angle = Vector2.Angle(hit.normal, Vector2.up);
+                        if (angle != 0)
+                        {
+                            collisions.standingOnSlope = true;
+                            collisions.slopeAngle = angle;
+                        }
                     }
                     else
                         collisions.above = true;
@@ -102,8 +117,6 @@ public class MovementScript : MonoBehaviour
     protected void UpdateRayOrigins()
     {
         Bounds bounds = collider.bounds;
-        rayOrigins.absBottomLeft = bounds.min;
-        rayOrigins.absBottomRight = new Vector2(bounds.max.x, bounds.min.y);
         
         bounds.Expand(skinDepth * -2);
 
@@ -112,13 +125,12 @@ public class MovementScript : MonoBehaviour
         rayOrigins.topRight = bounds.max;
         rayOrigins.topLeft = new Vector2(bounds.min.x, bounds.max.y);
 
-        rayOrigins.horizontalSpacing = new Vector2(0, bounds.size.y / (horizontalRays - 1));
+        rayOrigins.horizontalSpacing = new Vector2(0, (bounds.size.y - bottomRayHeight) / (horizontalRays - 1));
         rayOrigins.verticalSpacing = new Vector2(bounds.size.x / (verticalRays - 1), 0);
     }
 
     protected struct RayOrigins
     {
-        public Vector2 absBottomLeft, absBottomRight;//absoluta hörnen
         public Vector2 topLeft, topRight, bottomLeft, bottomRight;
         public Vector2 horizontalSpacing, verticalSpacing;
     }
@@ -126,16 +138,14 @@ public class MovementScript : MonoBehaviour
     public struct CollisionInfo
     {
         public bool above, below, left, right;
-
-        public bool ascendingSlope, descendingSlope;
-        public float slopeAngle, slopeAngleOld;
+        public bool standingOnSlope;
+        public float slopeAngle;
+        
 
         public void reset()
         {
             above = below = left = right = false;
-            ascendingSlope = descendingSlope = false;
-
-            slopeAngleOld = slopeAngle;
+            standingOnSlope = false;
             slopeAngle = 0;
         }
     }
