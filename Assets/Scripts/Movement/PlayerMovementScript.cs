@@ -2,21 +2,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum MovementState
+{
+    none,
+    running,
+    wall_gliding,
+    hanging, //hänger på väggkant
+    jumping,
+    falling,
+    dashing
+}
+
 //Spelarens begränsningar läggs här. Controllern kan se nedräknarvariabler och sådant men den kan kalla alla metoder så mycket den vill också
 //om inte spelarens dash cooldown är nedräknad så händer inget.
 [RequireComponent(typeof(PlayerScript))]
 public class PlayerMovementScript : WalkerMovementScript
 {
-    public enum MovementState
-    {
-        none,
-        running,
-        wall_gliding,
-        hanging, //hänger på väggkant
-        jumping,
-        falling,
-        dashing
-    }
 
     public MovementState movementState { get; protected set; } = MovementState.none;
     public int speedLevel { get; protected set; } = 0;
