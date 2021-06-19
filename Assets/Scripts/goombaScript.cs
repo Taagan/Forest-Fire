@@ -16,6 +16,5 @@ public class goombaScript : MonoBehaviour
     void Update()
     {
         Movement.SetHorizontalVelocity(-speed);
-        this.transform.rotation = new Quaternion(this.transform.rotation.x, 0, this.transform.rotation.z, 0);
     }
 }
