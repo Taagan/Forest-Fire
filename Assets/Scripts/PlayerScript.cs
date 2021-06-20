@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 
+
 public class PlayerScript : MonoBehaviour
 {
     //0 == no | 1 == yes
@@ -18,19 +19,26 @@ public class PlayerScript : MonoBehaviour
 
     public GameObject currentCheckpoint;
 
+    protected PlayerMovementScript movementScript;
     protected SpriteRenderer sRenderer;
+    protected Animator animator;
 
     // Start is called before the first frame update
     void Start()
     {
         hitpoints = maxHitPoints;
         sRenderer = GetComponent<SpriteRenderer>();
+        animator = GetComponent<Animator>();
+        movementScript = GetComponent<PlayerMovementScript>();
     }
 
     // Update is called once per frame
     void Update()
     {
         UpdateTimers();
+
+        if (animator != null)
+            AnimatorUpdate();
 
         if (facing == 1 && sRenderer.flipX == true)
             sRenderer.flipX = false;
@@ -69,6 +77,29 @@ public class PlayerScript : MonoBehaviour
         else if (collision.gameObject.tag == "Checkpoint")
         {
             currentCheckpoint = collision.gameObject;
+        }
+    }
+
+
+    
+    protected void AnimatorUpdate()
+    {
+        MovementState movementState = movementScript.movementState;
+
+        if (movementState == MovementState.running)
+        {
+            animator.SetBool("running", true);
+            if (movementScript.speedLevel == 0)
+                animator.speed = 1;
+            else if (movementScript.speedLevel == 1)
+                animator.speed = 1.3f;
+            else if (movementScript.speedLevel == 2)
+                animator.speed = 1.6f;
+        }
+        else
+        {
+            animator.SetBool("running", false);
+            animator.speed = 1;
         }
     }
 }

@@ -38,13 +38,13 @@ public class PlayerControllerScript : MonoBehaviour
         if (signedCurrentInput.x != 0)
         {
             playerMover.Move((sbyte)signedCurrentInput.x);
-            if (playerMover.movementState == PlayerMovementScript.MovementState.wall_gliding || playerMover.movementState == PlayerMovementScript.MovementState.hanging)
+            if (playerMover.movementState == MovementState.wall_gliding || playerMover.movementState == MovementState.hanging)
                 playerScript.facing = playerMover.wallGlideWallDir * -1;
             else
                 playerScript.facing = (int)signedCurrentInput.x;
         }
 
-        if (playerMover.movementState == PlayerMovementScript.MovementState.wall_gliding)
+        if (playerMover.movementState == MovementState.wall_gliding)
         {
             if (signedCurrentInput.y == -1 && Input.GetButtonDown("Jump"))
                 playerMover.StopWallGlide();

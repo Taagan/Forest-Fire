@@ -2,21 +2,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum MovementState
+{
+    none,
+    running,
+    wall_gliding,
+    hanging, //hänger på väggkant
+    jumping,
+    falling,
+    dashing
+}
+
 //Spelarens begränsningar läggs här. Controllern kan se nedräknarvariabler och sådant men den kan kalla alla metoder så mycket den vill också
 //om inte spelarens dash cooldown är nedräknad så händer inget.
 [RequireComponent(typeof(PlayerScript))]
 public class PlayerMovementScript : WalkerMovementScript
 {
-    public enum MovementState
-    {
-        none,
-        running,
-        wall_gliding,
-        hanging, //hänger på väggkant
-        jumping,
-        falling,
-        dashing
-    }
 
     public MovementState movementState { get; protected set; } = MovementState.none;
     public int speedLevel { get; protected set; } = 0;
@@ -50,10 +51,11 @@ public class PlayerMovementScript : WalkerMovementScript
     [Space(10)]
     [Header("               Wall things")]
     [Tooltip("tid som man håller sig stilla efter man börjat hålla sig till en vägg")]
-    public float wallGlideHoldTime = 1.5f;
+    public float wallGlideHoldTime = 0f;
     [Tooltip("Tid som det tar för spelaren att släppa väggen efter att man slutar ge input mot väggen")]
     public float wallGlideReleaseTime = .5f;
     public float wallJumpOutVelocity = 12f;//velocity ut från väggen när man vägghoppar
+    public float wallJumpUpVelocity = 10f;
     public float wallGlideGravity = 10;
     public float wallGlideMaxVelocity = 7;
     public float wallGlideForceDownGravity = 13;
@@ -63,6 +65,7 @@ public class PlayerMovementScript : WalkerMovementScript
     protected float ignSemisolidsTimer = 0f;
     protected float duckThroughDownVel = -5f;//velocity applied to more smoothly pass through semisolids
 
+    protected float currentJumpVelocity = 10f;
     protected int airJumpsAvailable = 1;
     protected float jumpingTimer = 0;
     protected const float jumpCooldown = .05f;//liten timer för att förhindra omedelbara "accidental" dubbelhopp
@@ -186,6 +189,14 @@ public class PlayerMovementScript : WalkerMovementScript
             case MovementState.wall_gliding:
                 sRenderer.color = wall_glidingColor;
 
+                //Kolla om fortfarande är intill väggen. Detta funkar eftersom en liten fart sätts mot väggen
+                if(wallGlideWallDir == 1 && !collisions.right || wallGlideWallDir == -1 && !collisions.left)
+                {
+                    StopWallGlide();
+                    movementState = MovementState.falling;
+                    goto case MovementState.falling;
+                }
+
                 if (grounded)//om grounded är man inte längre på väggen ju..
                 {
                     StopWallGlide();
@@ -208,6 +219,9 @@ public class PlayerMovementScript : WalkerMovementScript
                 else if (moveDir == wallGlideWallDir && wallGlideReleaseTimer > 0)
                     wallGlideReleaseTimer = 0;
 
+                //sätt velocity.x till lite mot väggen så att man kolliderar med den och därmed kan kolla ifall man inte längre kolliderar med den..
+                velocity.x = (float)wallGlideWallDir * .5f;
+
                 break;
 
             case MovementState.hanging:
@@ -223,8 +237,7 @@ public class PlayerMovementScript : WalkerMovementScript
 
             case MovementState.dashing:
                 sRenderer.color = dashingColor;
-
-                //velocity.x = dashDir * dashVelocity;
+                
                 sRenderer.color = Color.blue;
                 break;
         }
@@ -329,7 +342,7 @@ public class PlayerMovementScript : WalkerMovementScript
         if (jumpingTimer > 0)
         {
             jumpingTimer -= dT;
-            SetVerticalVelocity(jumpVelocity);
+            SetVerticalVelocity(currentJumpVelocity);
         }
 
         if (dashTimer > 0)
@@ -463,15 +476,15 @@ public class PlayerMovementScript : WalkerMovementScript
             if (velocity.y < wallGlideForceDownMaxVelocity)
                 velocity.y = -wallGlideForceDownMaxVelocity;
         }
-
     }
 
     protected void WallJump()
     {
         //Set velocity.x bort från väggen ett värde
+        currentJumpVelocity = wallJumpUpVelocity;
         velocity.x = wallGlideWallDir * -1 * wallJumpOutVelocity;
-        velocity.y = jumpVelocity;
-
+        velocity.y = currentJumpVelocity;
+        
         StopWallGlide();
         jumpingTimer = jumpHoldTime;
         jumpCooldownTimer = jumpCooldown;
@@ -491,6 +504,8 @@ public class PlayerMovementScript : WalkerMovementScript
 
             if (!grounded)
                 airJumpsAvailable--;
+
+            currentJumpVelocity = jumpVelocity;
 
             jumpingTimer = jumpHoldTime;
             jumpCooldownTimer = jumpCooldown;
