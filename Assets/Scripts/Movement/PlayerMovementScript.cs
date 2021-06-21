@@ -38,13 +38,15 @@ public class PlayerMovementScript : WalkerMovementScript
     public float jumpVelocity = 10f;
     public float jumpHoldTime = .15f;//sekunder som man kan hålla nere hoppknappen för att få högre hopphöjd.
     public int airJumps = 1;
-    public float jumpFwdBoost = 5;//fart frammåt som man får om man rör vill röra sig medans man gör ett hopp
+    public float jumpFwdBoost = 5;//fart frammåt som man får om man rör sig medans man gör ett hopp
     public float coyoteTime = .1f;//tid efter man lämnat marken som man fortfarande är grounded.
 
     [Space(10)]
     [Header("               Dash")]
     public float dashTime = .3f;//Sekunder som man dashar om den inte avbryts.
-    public float dashVelocity = 20f;
+    public float dashDecceleration = 5f;//extremt låg decceleration när dashar. Blir som man är på hal is typ.
+    public float dashVelocity = 15f;
+    public float airDashUpVelocity = 10f;//fart man får uppåt vid dash i luften.
     public int maxDashes = 1;
     public int dashes { get; protected set; } = 1;
 
@@ -498,10 +500,7 @@ public class PlayerMovementScript : WalkerMovementScript
         if (movementState == MovementState.wall_gliding)
             WallJump();
         else if ((grounded || airJumpsAvailable > 0) && jumpCooldownTimer <= 0 && movementState != MovementState.jumping)
-        {    
-            if (movementState == MovementState.dashing)
-                StopDash();
-
+        {
             if (!grounded)
                 airJumpsAvailable--;
 
@@ -540,12 +539,10 @@ public class PlayerMovementScript : WalkerMovementScript
             return;
 
         if (movementState == MovementState.jumping)
-        {
             StopJump();
-        }
 
         if (dir != 0)
-            dir = (int)Mathf.Sign(dir);//ett eller minus ett..
+            dir = (int)Mathf.Sign(dir);//ett eller minus ett.., sign bara ser typ "clampar" talet till det som är närmast, 0 blir till ett dock.
         else
             dir = playerScript.facing;
         
@@ -554,9 +551,7 @@ public class PlayerMovementScript : WalkerMovementScript
 
         velocity.x = dir * dashVelocity;
         velocity.y = 0;
-        affectedByGravity = false;
 
-        dashDir = dir;
         dashes--;
         dashTimer = dashTime;
         movementState = MovementState.dashing;
@@ -567,7 +562,6 @@ public class PlayerMovementScript : WalkerMovementScript
     {
         if(movementState == MovementState.dashing)
             movementState = MovementState.none;
-        affectedByGravity = true;
     }
 
     public void Move(int dir)//dir == -1 = vänster, dir == 1 = höger
