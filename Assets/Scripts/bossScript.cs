@@ -11,13 +11,16 @@ public class bossScript : MonoBehaviour
     public float phaseTime;
     public float timer;
     public float jumpHeight = 5;
+    bool turned;
     public GameObject projectile;
     public GameObject slash;
     public GameObject fireSpawnPoint;
+    private GameObject player;
     // Start is called before the first frame update
     void Start()
     {
         movement = GetComponent<WalkerMovementScript>();
+        player = GameObject.FindGameObjectWithTag("Player");
         switch (currentPhase)
         {
             case Phase.Idle:
@@ -46,10 +49,18 @@ public class bossScript : MonoBehaviour
             currentPhase++;
         }
         timer += Time.deltaTime;
+        if (timer >= phaseTime / 2 && !turned)
+        {
+            if (player.transform.position.x > this.transform.position.x)
+                transform.rotation = Quaternion.AngleAxis(0, Vector3.up);
+
+            if (player.transform.position.x < this.transform.position.x)
+                transform.rotation = Quaternion.AngleAxis(180, Vector3.up);
+
+            turned = true;
+        }
         if (timer >= phaseTime)
         {
-            Debug.Log(currentPhase);
-            Debug.Log(phaseCounter);
             switch (phaseCounter)
             {
                 case 0:
@@ -72,18 +83,21 @@ public class bossScript : MonoBehaviour
                     break;
             }
             timer = 0;
+            turned = false;
         }
     }
 
     public void Slash()
     {
-        Instantiate(slash, fireSpawnPoint.transform.position, this.transform.rotation);
+        GameObject flame = Instantiate(slash, fireSpawnPoint.transform.position, this.transform.rotation);
+        flame.GetComponent<ProjectileScript>().destination = player.transform.position;
         phaseCounter++;
     }
 
     public void Projectile()
     {
-        Instantiate(projectile, fireSpawnPoint.transform.position, this.transform.rotation);
+        GameObject flame = Instantiate(projectile, fireSpawnPoint.transform.position, this.transform.rotation);
+        flame.GetComponent<ProjectileScript>().destination = player.transform.position;
         phaseCounter++;
     }
 
