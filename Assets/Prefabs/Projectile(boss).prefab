@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1597999029986430644}
   - component: {fileID: 3307653243404566808}
   - component: {fileID: 3170061272635475390}
+  - component: {fileID: 2700863952063107338}
   m_Layer: 0
   m_Name: Projectile(boss)
   m_TagString: Enemy
@@ -29,7 +30,7 @@ Transform:
   m_GameObject: {fileID: 1597999029986430645}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 334.35464, y: -14.1208725, z: 0}
-  m_LocalScale: {x: 4.8498, y: 4.8498, z: 1.6166}
+  m_LocalScale: {x: 7.3766623, y: 7.3766623, z: 2.4588873}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -125,7 +126,7 @@ MonoBehaviour:
   type: 1
   destination: {x: 0, y: 0, z: 0}
   damage: 0
-  speed: 10
+  speed: 6
   lifetime: 5
 --- !u!50 &3170061272635475390
 Rigidbody2D:
@@ -148,3 +149,21 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &2700863952063107338
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1597999029986430645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eb0b76457ffdf745b76b52ea53044ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ignoreSemisolid: 0
+  velocity: {x: 0, y: 0}
+  grounded: 0
+  affectedByGravity: 0
+  gravityConstant: 40
+  maxFallSpeed: 40

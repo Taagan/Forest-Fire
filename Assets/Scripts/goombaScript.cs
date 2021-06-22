@@ -75,4 +75,15 @@ public class goombaScript : MonoBehaviour
             //collision.gameObject.GetComponent<PlayerScript>().TakeDamage(damage);
         }
     }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (CompareTag("PlayerAttack"))
+        {
+            Debug.Log("attacked");
+            //collision.gameObject.GetComponent<SaltkristallScript>()
+            //^ use something in there later
+            Destroy(gameObject);
+        }
+    }
 }

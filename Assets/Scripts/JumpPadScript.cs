@@ -10,7 +10,7 @@ public class JumpPadScript : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Player"))
         {
-            collision.gameObject.GetComponent<PlayerMovementScript>().StartJump();
+            collision.gameObject.GetComponent<PlayerMovementScript>().SetVerticalVelocity(jumpForce);
             //collision.gameObject.GetComponent<PlayerMovementScript>().velocity.y += jumpForce;
         }
     }

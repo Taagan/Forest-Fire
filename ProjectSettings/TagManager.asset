@@ -10,6 +10,7 @@ TagManager:
   - Semisolid
   - Options
   - Enemy
+  - PlayerAttack
   layers:
   - Default
   - TransparentFX

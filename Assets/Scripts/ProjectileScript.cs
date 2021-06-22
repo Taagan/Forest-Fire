@@ -3,6 +3,7 @@
 public class ProjectileScript : MonoBehaviour
 {
     public enum ProjectileType { returning, boss}
+    WalkerMovementScript movement;
     public ProjectileType type;
     public Vector3 destination;
     Vector2 moveDirection;
@@ -17,10 +18,14 @@ public class ProjectileScript : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        movement = GetComponent<WalkerMovementScript>();
         if (type == ProjectileType.boss)
         {
             moveDirection = (destination - this.transform.position).normalized * speed;
         }
+        if (type == ProjectileType.returning)
+            movement.SetVerticalVelocity(speed);
+
         Destroy(gameObject, lifetime);
     }
 
@@ -42,13 +47,7 @@ public class ProjectileScript : MonoBehaviour
 
     void ReturningProjectile()
     {
-        timer += Time.deltaTime;
-        if (timer >= lifetime / 2 && !swapped)
-        {
-            speed *= -1;
-            swapped = true;
-        }
-        this.transform.Translate(speed, 0, 0);
+        //Do extra stuff if neccessary
     }
 
     void BossProjectile()
