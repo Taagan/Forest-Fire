@@ -95,6 +95,7 @@ public class PlayerMovementScript : WalkerMovementScript
 
     protected int dashDir = 1;
     protected float dashTimer;
+    protected float dashCooldownTimer = 0;
 
 
     //Colors, för debug mest kanske. Om det inte blir snyggt nog att ha i spelet
@@ -335,7 +336,7 @@ public class PlayerMovementScript : WalkerMovementScript
                 speedLevel = 0;
         }
 
-        if (forgivnessTimer > 0)
+        if (forgivnessTimer > 0 && movementState != MovementState.wall_gliding)
         {
             forgivnessTimer -= dT;
         }
@@ -365,7 +366,9 @@ public class PlayerMovementScript : WalkerMovementScript
             if (dashTimer <= 0)
                 StopDash();
         }
-        
+        if (dashCooldownTimer > 0)
+            dashCooldownTimer -= dT;
+
         if (ignSemisolidsTimer > 0)
         {
             ignoreSemisolid = true;
@@ -492,9 +495,10 @@ public class PlayerMovementScript : WalkerMovementScript
         velocity.x = wallGlideWallDir * -1 * wallJumpOutVelocity;
         velocity.y = currentJumpVelocity;
 
-        //så att man behåller sin fartnivå efter vägghopp
+        //så att man behåller sin fartnivå efter vägghopp och lite längre forgivnessTimer
         forgivnessDir = wallGlideWallDir * -1;
-        forgivnessTimer = .1f;
+        if (forgivnessTimer > 0)
+            forgivnessTimer += .15f;
 
         StopWallGlide();
         jumpingTimer = jumpHoldTime;
@@ -546,11 +550,13 @@ public class PlayerMovementScript : WalkerMovementScript
     //konstant snabb fart, studsbar, timer, ska gå att avsluta när som??
     public void StartDash(int dir)
     {
-        if (movementState == MovementState.dashing || dashes < 1)
+        if (movementState == MovementState.dashing || dashes < 1 || dashCooldownTimer > 0)
             return;
 
         if (movementState == MovementState.jumping)
             StopJump();
+        else if (movementState == MovementState.wall_gliding)
+            StopWallGlide();
 
         if (dir != 0)
             dir = (int)Mathf.Sign(dir);//ett eller minus ett.., sign bara typ "clampar" talet till det som är närmast, 0 blir till ett dock.
@@ -570,6 +576,7 @@ public class PlayerMovementScript : WalkerMovementScript
             velocity.y = 0;
 
         dashes--;
+        dashCooldownTimer = dashCooldown;
         dashTimer = dashTime;
         movementState = MovementState.dashing;
     }

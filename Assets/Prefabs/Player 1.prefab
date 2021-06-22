@@ -5022,7 +5022,7 @@ MonoBehaviour:
   dashDecceleration: 5
   dashVelocityBoost: 5
   airDashUpVelocity: 10
-  dashCooldown: 2
+  dashCooldown: 1.5
   maxDashes: 1
   wallGlideHoldTime: 0
   wallGlideReleaseTime: 0.5
