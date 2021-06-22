@@ -121,6 +121,10 @@ public class PlayerMovementScript : WalkerMovementScript
     // Update is called once per frame
     override protected void Update()
     {
+        Debug.Log("dir: " + forgivnessDir);
+        Debug.Log("lvl: " + forgivnessLevel);
+        Debug.Log("timer: " + forgivnessTimer); 
+
         Timers();
 
         if (grounded)
@@ -456,6 +460,16 @@ public class PlayerMovementScript : WalkerMovementScript
     protected void StartWallGlide()
     {
         wallGlideHoldTimer = wallGlideHoldTime;
+        
+        if(forgivnessTimer > 0 || speedLevel > 0)//lite av en hack att jag använder forgivnessvariablerna för att spara fartnivån när man träffar väggen
+        {
+            if (speedLevel == 0)
+                speedLevel = forgivnessLevel;
+            else
+                forgivnessLevel = speedLevel;
+            forgivnessDir = wallGlideWallDir * -1;
+            forgivnessTimer = forgivnessTime;
+        }
 
         velocity.y = 0;
         affectedByGravity = false;
@@ -495,10 +509,10 @@ public class PlayerMovementScript : WalkerMovementScript
         velocity.x = wallGlideWallDir * -1 * wallJumpOutVelocity;
         velocity.y = currentJumpVelocity;
 
-        //så att man behåller sin fartnivå efter vägghopp och lite längre forgivnessTimer
-        forgivnessDir = wallGlideWallDir * -1;
-        if (forgivnessTimer > 0)
-            forgivnessTimer += .15f;
+        if(forgivnessTimer > 0)
+        {
+            speedLevel = forgivnessLevel;
+        }
 
         StopWallGlide();
         jumpingTimer = jumpHoldTime;
