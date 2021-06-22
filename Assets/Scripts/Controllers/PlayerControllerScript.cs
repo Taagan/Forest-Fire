@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 [RequireComponent(typeof(PlayerMovementScript))]
 [RequireComponent(typeof(PlayerScript))]
@@ -9,7 +7,11 @@ public class PlayerControllerScript : MonoBehaviour
 {
     protected PlayerMovementScript playerMover;
     protected PlayerScript playerScript;
-
+    float solidDropBuffer;
+    public float solidDropBufferTime = 1;
+    bool solidDropCheck;
+    bool solidDropWindow;
+    float lastMoveY;
     PlayerAttackScript attack;
     //public AttackScript attack2;
 
@@ -26,6 +28,7 @@ public class PlayerControllerScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        lastMoveY = currentInput.y;
         currentInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         Vector2 signedCurrentInput = new Vector2(Mathf.Sign(currentInput.x), Mathf.Sign(currentInput.y));//uselt namn men kommer inte på bättre
 
@@ -52,7 +55,9 @@ public class PlayerControllerScript : MonoBehaviour
                 playerMover.WallGlideForceDown();
 
         }
-        
+
+        SemiSolidDrop();
+
 
         if (Input.GetButtonDown("Jump"))
         {
@@ -76,7 +81,45 @@ public class PlayerControllerScript : MonoBehaviour
         }
     }
 
-    
 
-    
+    void SemiSolidDrop()
+    {
+        if (lastMoveY != -1)
+            solidDropCheck = true;
+        else
+        {
+            solidDropCheck = false;
+        }
+        if (solidDropWindow)
+        {
+            solidDropBuffer += Time.deltaTime;
+            if (solidDropBuffer >= solidDropBufferTime)
+            {
+                solidDropWindow = false;
+                solidDropBuffer -= solidDropBuffer;
+            }
+        }
+        Debug.Log("Didn't hold down last frame " + solidDropCheck);
+        Debug.Log("We clicked down in the last 0.1s " + solidDropWindow);
+        Debug.Log("our current input is " + currentInput.y);
+        if (currentInput.y == -1)
+        {
+            solidDropWindow = true;
+
+            //currentInput.y == -1 is if we're holding down
+            //solidDropCheck is true if we did not hold down last frame
+            //solidDropWindow is ture if we did hold down last frame
+            if (currentInput.y == -1 && solidDropCheck && solidDropWindow && solidDropBuffer >= solidDropBufferTime / 4)
+            {
+                playerMover.DuckThroughSemisolid();
+                solidDropCheck = false;
+                solidDropWindow = false;
+                solidDropBuffer -= solidDropBuffer;
+            }
+        }
+    }
+
+
+
+
 }

@@ -1380,6 +1380,16 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: 0.98
       objectReference: {fileID: 0}
+    - target: {fileID: 6982978206632956968, guid: f9d93c3f813624745a7e8dd7e9b22a82,
+        type: 3}
+      propertyPath: solidDropWindow
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6982978206632956968, guid: f9d93c3f813624745a7e8dd7e9b22a82,
+        type: 3}
+      propertyPath: solidDropBufferTime
+      value: 0.4
+      objectReference: {fileID: 0}
     - target: {fileID: 6982978206632956969, guid: f9d93c3f813624745a7e8dd7e9b22a82,
         type: 3}
       propertyPath: m_Name
