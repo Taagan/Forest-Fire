@@ -4949,7 +4949,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 120be822b48c1a144a030627cf6c9002, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 3fc459993332aad46b7150c135e3c67b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -4973,18 +4973,18 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: -0.016022086, y: 0.028839588}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 1}
+    oldSize: {x: 1.28, y: 1.28}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.44243073, y: 1.019227}
   m_EdgeRadius: 0
 --- !u!114 &6982978206632956972
 MonoBehaviour:
@@ -5006,9 +5006,9 @@ MonoBehaviour:
   maxFallSpeed: 40
   playerScript: {fileID: 0}
   runSpeed:
-  - 7
-  - 12
-  - 20
+  - 5
+  - 10
+  - 13
   groundAcceleration: 100
   airAcceleration: 30
   groundDecceleration: 100
@@ -5019,7 +5019,10 @@ MonoBehaviour:
   jumpFwdBoost: 5
   coyoteTime: 0.1
   dashTime: 0.3
-  dashVelocity: 20
+  dashDecceleration: 5
+  dashVelocityBoost: 5
+  airDashUpVelocity: 10
+  dashCooldown: 1.5
   maxDashes: 1
   wallGlideHoldTime: 0
   wallGlideReleaseTime: 0.5
