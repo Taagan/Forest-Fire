@@ -10,7 +10,8 @@ public enum MovementState
     hanging, //hänger på väggkant
     jumping,
     falling,
-    dashing
+    dashing,
+    dashJumping
 }
 
 //Spelarens begränsningar läggs här. Controllern kan se nedräknarvariabler och sådant men den kan kalla alla metoder så mycket den vill också
@@ -45,8 +46,9 @@ public class PlayerMovementScript : WalkerMovementScript
     [Header("               Dash")]
     public float dashTime = .3f;//Sekunder som man dashar om den inte avbryts.
     public float dashDecceleration = 5f;//extremt låg decceleration när dashar. Blir som man är på hal is typ.
-    public float dashVelocity = 15f;
+    public float dashVelocityBoost = 5f;
     public float airDashUpVelocity = 10f;//fart man får uppåt vid dash i luften.
+    public float dashCooldown = 2f; //sekunders cooldown från start av dash till nästa är möjlig.
     public int maxDashes = 1;
     public int dashes { get; protected set; } = 1;
 
@@ -234,14 +236,23 @@ public class PlayerMovementScript : WalkerMovementScript
             case MovementState.jumping:
                 sRenderer.color = jumpingColor;
 
+                SetVerticalVelocity(currentJumpVelocity);
                 StandardMovementUpdate();
                 break;
 
             case MovementState.dashing:
                 sRenderer.color = dashingColor;
-                
-                sRenderer.color = Color.blue;
+
+                StandardMovementUpdate();
                 break;
+
+            case MovementState.dashJumping:
+                sRenderer.color = dashingColor;
+
+                SetVerticalVelocity(currentJumpVelocity);
+                StandardMovementUpdate();
+                break;
+
         }
         
         base.Update();
@@ -344,16 +355,15 @@ public class PlayerMovementScript : WalkerMovementScript
         if (jumpingTimer > 0)
         {
             jumpingTimer -= dT;
-            SetVerticalVelocity(currentJumpVelocity);
+            if (jumpingTimer <= 0)
+                StopJump();
         }
 
         if (dashTimer > 0)
         {
             dashTimer -= dT;
-        }
-        if (movementState == MovementState.dashing && dashTimer <= 0)
-        {
-            StopDash();
+            if (dashTimer <= 0)
+                StopDash();
         }
         
         if (ignSemisolidsTimer > 0)
@@ -389,6 +399,8 @@ public class PlayerMovementScript : WalkerMovementScript
             //alltid positiv version av velocity.x, räkna på den så och flippa till rätt håll sen bara.
             float vel = velocity.x * currentDir;
             float deccel = grounded ? groundDecceleration : airDecceleration;
+            if (movementState == MovementState.dashing)
+                deccel = dashDecceleration;
             vel -= deccel * dT;
 
             if (vel < 0)
@@ -396,15 +408,6 @@ public class PlayerMovementScript : WalkerMovementScript
 
             velocity.x = vel * currentDir;
         }
-        //om ska vända sig så deccelererar man snabbare, kanske inte bör vara så egentligen. Blir lite för kontrollerbart i höga farter.
-        //else if(wantedDir == currentDir * -1)
-        //{
-        //    float vel = velocity.x * currentDir;
-        //    float deccel = grounded ? groundDecceleration + groundAcceleration : airDecceleration + airAcceleration;
-        //    vel -= deccel * dT;
-
-        //    velocity.x = vel * currentDir;
-        //}
         //accelerera
         else if (currentDir == 0 || (wantedHorizontalSpeed * wantedDir > velocity.x * currentDir && wantedDir == currentDir))
         {
@@ -422,6 +425,8 @@ public class PlayerMovementScript : WalkerMovementScript
         {
             float vel = currentDir * velocity.x;
             float deccel = grounded ? groundDecceleration : airDecceleration;
+            if (movementState == MovementState.dashing)
+                deccel = dashDecceleration;
             vel -= deccel * dT;
 
             if (vel < wantedHorizontalSpeed * wantedDir)
@@ -486,15 +491,17 @@ public class PlayerMovementScript : WalkerMovementScript
         currentJumpVelocity = wallJumpUpVelocity;
         velocity.x = wallGlideWallDir * -1 * wallJumpOutVelocity;
         velocity.y = currentJumpVelocity;
-        
+
+        //så att man behåller sin fartnivå efter vägghopp
+        forgivnessDir = wallGlideWallDir * -1;
+        forgivnessTimer = .1f;
+
         StopWallGlide();
         jumpingTimer = jumpHoldTime;
         jumpCooldownTimer = jumpCooldown;
         movementState = MovementState.jumping;
     }
-
     
-
     public void StartJump()
     {
         if (movementState == MovementState.wall_gliding)
@@ -508,7 +515,11 @@ public class PlayerMovementScript : WalkerMovementScript
 
             jumpingTimer = jumpHoldTime;
             jumpCooldownTimer = jumpCooldown;
-            movementState = MovementState.jumping;
+
+            if (movementState == MovementState.dashing)
+                movementState = MovementState.dashJumping;
+            else
+                movementState = MovementState.jumping;
 
             if (moveDir != 0)
                 velocity.x += moveDir * jumpFwdBoost;
@@ -518,7 +529,7 @@ public class PlayerMovementScript : WalkerMovementScript
     public void StopJump()
     {
         jumpingTimer = 0;
-        if(movementState == MovementState.jumping)
+        if(movementState == MovementState.jumping || movementState == MovementState.dashJumping)
             movementState = MovementState.falling;
     }
 
@@ -542,15 +553,21 @@ public class PlayerMovementScript : WalkerMovementScript
             StopJump();
 
         if (dir != 0)
-            dir = (int)Mathf.Sign(dir);//ett eller minus ett.., sign bara ser typ "clampar" talet till det som är närmast, 0 blir till ett dock.
+            dir = (int)Mathf.Sign(dir);//ett eller minus ett.., sign bara typ "clampar" talet till det som är närmast, 0 blir till ett dock.
         else
             dir = playerScript.facing;
         
         if (speedLevel < maxSpeedLevel - 1)
             speedLevel++;
 
-        velocity.x = dir * dashVelocity;
-        velocity.y = 0;
+        velocity.x = dir * (runSpeed[speedLevel] + dashVelocityBoost);
+
+        if(movementState == MovementState.jumping ||movementState == MovementState.falling)
+        {
+            velocity.y = airDashUpVelocity;
+        }
+        else 
+            velocity.y = 0;
 
         dashes--;
         dashTimer = dashTime;
@@ -560,6 +577,7 @@ public class PlayerMovementScript : WalkerMovementScript
     //händer automatiskt när dashtimer är slut eller när controllern kör den.
     public void StopDash()
     {
+        dashTimer = 0;
         if(movementState == MovementState.dashing)
             movementState = MovementState.none;
     }
