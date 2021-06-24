@@ -61,7 +61,11 @@ public class SaltkristallScript : MonoBehaviour
     public void Hit(Collider2D collider)
     {
         if (collider.CompareTag("Enemy"))
+        {
             Debug.Log("Hit enemy");
+            collider.GetComponent<HittableScript>().TakeDamage(1);
+            collider.GetComponent<HittableScript>().ActiveTrigger();
+        }
         else
         {
             Debug.Log("Hit ground, tror jag...");

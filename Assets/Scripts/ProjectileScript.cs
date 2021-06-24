@@ -7,7 +7,7 @@ public class ProjectileScript : MonoBehaviour
     public ProjectileType type;
     public Vector3 destination;
     Vector2 moveDirection;
-    public float damage;
+    public int damage;
     public float speed;
     public float lifetime;
     float timer;
@@ -58,7 +58,12 @@ public class ProjectileScript : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (type == ProjectileType.boss && !collision.CompareTag("Enemy") && !collision.CompareTag("Semisolid"))
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            collision.gameObject.GetComponent<PlayerScript>().Hurt(damage);
+        }
+
+        if (type == ProjectileType.boss && !collision.gameObject.CompareTag("Enemy") && !collision.gameObject.CompareTag("Semisolid"))
         {
             Destroy(gameObject);
         }

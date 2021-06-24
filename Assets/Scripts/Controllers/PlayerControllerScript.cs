@@ -99,9 +99,6 @@ public class PlayerControllerScript : MonoBehaviour
                 solidDropBuffer -= solidDropBuffer;
             }
         }
-        Debug.Log("Didn't hold down last frame " + solidDropCheck);
-        Debug.Log("We clicked down in the last 0.1s " + solidDropWindow);
-        Debug.Log("our current input is " + currentInput.y);
         if (currentInput.y == -1)
         {
             solidDropWindow = true;

@@ -3,40 +3,32 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public enum GoombaType { Walking, Flying }
+public enum GoombaType { Walking, Flying, Stationary}
 
-public class goombaScript : MonoBehaviour
+public class goombaScript : HittableScript
 {
     private WalkerMovementScript Movement;
     public GoombaType type;
     public float speed;
     public int damage;
-    public int hp;
     private float flyingTimer;
+    private GameObject player;
 
     [SerializeField]
     private float flyingCD = 5;
 
     private void Start()
     {
-        Movement = GetComponent<WalkerMovementScript>();
+        player = GameObject.FindGameObjectWithTag("Player");
+        if (type != GoombaType.Stationary)
+        {
+            Movement = GetComponent<WalkerMovementScript>();
+        }
         if (type == GoombaType.Flying)
         {
             flyingTimer = flyingCD;
             Movement.gravityConstant = speed;
         }
-    }
-
-    public void Damage(int dmg)
-    {
-        hp -= dmg;
-        DeathCheck();
-    }
-
-    private void DeathCheck()
-    {
-        if (hp <= 0)
-            Destroy(gameObject);
     }
 
     // Update is called once per frame
@@ -47,43 +39,53 @@ public class goombaScript : MonoBehaviour
 
     private void MovementType()
     {
-        if (type == GoombaType.Walking)
+        switch (type)
         {
-            Movement.SetHorizontalVelocity(-speed);
-        }
-        else if (type == GoombaType.Flying)
-        {
-            flyingTimer += Time.deltaTime;
-            if (flyingTimer >= flyingCD)
-            {
-                Movement.SetVerticalVelocity(speed);
-                flyingTimer -= flyingTimer;
-            }
+            case GoombaType.Walking:
+                Movement.SetHorizontalVelocity(-speed);
+                break;
+            case GoombaType.Flying:
+                flyingTimer += Time.deltaTime;
+                if (flyingTimer >= flyingCD)
+                {
+                    Movement.SetVerticalVelocity(speed);
+                    flyingTimer -= flyingTimer;
+                }
+                break;
+            case GoombaType.Stationary:
+                if (player.transform.position.x > this.transform.position.x)
+                    transform.rotation = Quaternion.AngleAxis(0, Vector3.up);
+                else
+                    transform.rotation = Quaternion.AngleAxis(180, Vector3.up);
+                break;
+            default:
+                break;
         }
     }
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        if (Movement.collisions.left && !CompareTag("Player") || (Movement.collisions.right) && !CompareTag("Player"))
+        if (collision.gameObject.CompareTag("Player"))
         {
-            Debug.Log("b");
-            speed *= -1;
-            transform.Rotate(0, 180f, 0, Space.Self);
+            collision.gameObject.GetComponent<PlayerScript>().Hurt(damage);
+            Debug.Log("a");
         }
-        if (CompareTag("Player"))
+        switch (type)
         {
-            //collision.gameObject.GetComponent<PlayerScript>().TakeDamage(damage);
+            case GoombaType.Walking:
+                    if (Movement.collisions.left && !collision.gameObject.CompareTag("Player") || (Movement.collisions.right) && !collision.gameObject.CompareTag("Player"))
+                    {
+                        speed *= -1;
+                        transform.Rotate(0, 180f, 0, Space.Self);
+                    }
+                break;
+            case GoombaType.Flying:
+                break;
+            case GoombaType.Stationary:
+                break;
+            default:
+                break;
         }
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (CompareTag("PlayerAttack"))
-        {
-            Debug.Log("attacked");
-            //collision.gameObject.GetComponent<SaltkristallScript>()
-            //^ use something in there later
-            Destroy(gameObject);
-        }
+        
     }
 }

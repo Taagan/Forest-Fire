@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4128669825629313299}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: FirePoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -42,7 +42,7 @@ GameObject:
   - component: {fileID: 4128669825683563336}
   - component: {fileID: 4128669825683563338}
   - component: {fileID: 4128669825683563341}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: FLAME SPEWER
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -126,7 +126,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc40894a31771c94ab76bb77116325ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackcd: 2
+  attackcd: 2.5
   projectile: {fileID: 4308289799889429426, guid: c8cd7b4fb8b154a4d89a233c17af6d3a,
     type: 3}
   fireSpawnPoint: {fileID: 4128669825629313296}

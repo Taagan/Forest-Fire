@@ -2,25 +2,33 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class bossScript : MonoBehaviour
+public class bossScript : HittableScript
 {
     WalkerMovementScript movement;
+    SpriteRenderer sprite;
+    Color originalColor;
     public enum Phase { Idle, Slash, Projectile, Jump}
     public Phase currentPhase;
     int phaseCounter;
     public float phaseTime;
     public float timer;
     public float jumpHeight = 5;
+    private float iFrameTimer;
+    public float iFrameDuration = 2;
+    public bool iFrame;
     bool turned;
     public GameObject projectile;
     public GameObject slash;
     public GameObject fireSpawnPoint;
     private GameObject player;
+    public int damage = 10;
     // Start is called before the first frame update
     void Start()
     {
+        sprite = GetComponent<SpriteRenderer>();
         movement = GetComponent<WalkerMovementScript>();
         player = GameObject.FindGameObjectWithTag("Player");
+        originalColor = sprite.color;
         switch (currentPhase)
         {
             case Phase.Idle:
@@ -43,6 +51,7 @@ public class bossScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        IFrameMethod();
         if (phaseCounter > 3)
         {
             phaseCounter = 1;
@@ -105,5 +114,31 @@ public class bossScript : MonoBehaviour
     {
         movement.SetVerticalVelocity(jumpHeight);
         phaseCounter++;
+    }
+
+
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            collision.gameObject.GetComponent<PlayerScript>().Hurt(damage);
+        }
+    }
+
+
+    private void IFrameMethod()
+    {
+        if (trigger)
+        {
+            iFrameTimer += Time.deltaTime;
+            sprite.color = Color.blue;
+            if (iFrameTimer >= iFrameDuration)
+            {
+                trigger = false;
+                iFrameTimer -= iFrameTimer;
+                sprite.color = originalColor;
+            }
+        }
     }
 }
