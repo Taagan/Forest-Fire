@@ -7,7 +7,7 @@ public class bossScript : HittableScript
     WalkerMovementScript movement;
     SpriteRenderer sprite;
     Color originalColor;
-    public enum Phase { Idle, Slash, Projectile, Jump}
+    public enum Phase { Idle, Slash, Projectile, Jump, Move}
     public Phase currentPhase;
     int phaseCounter;
     public float phaseTime;
@@ -16,7 +16,9 @@ public class bossScript : HittableScript
     private float iFrameTimer;
     public float iFrameDuration = 2;
     public bool iFrame;
+    public float moveValue = 0.001f;
     bool turned;
+    bool leftTurned;
     public GameObject projectile;
     public GameObject slash;
     public GameObject fireSpawnPoint;
@@ -25,8 +27,10 @@ public class bossScript : HittableScript
     // Start is called before the first frame update
     void Start()
     {
+        leftTurned = true;
         sprite = GetComponent<SpriteRenderer>();
         movement = GetComponent<WalkerMovementScript>();
+        movement.ignoreSemisolid = true;
         player = GameObject.FindGameObjectWithTag("Player");
         originalColor = sprite.color;
         switch (currentPhase)
@@ -51,8 +55,9 @@ public class bossScript : HittableScript
     // Update is called once per frame
     void Update()
     {
+       
         IFrameMethod();
-        if (phaseCounter > 3)
+        if (phaseCounter > 4)
         {
             phaseCounter = 1;
             currentPhase++;
@@ -61,10 +66,16 @@ public class bossScript : HittableScript
         if (timer >= phaseTime / 2 && !turned)
         {
             if (player.transform.position.x > this.transform.position.x)
+            {
                 transform.rotation = Quaternion.AngleAxis(0, Vector3.up);
+                leftTurned = false;
+            }
 
             if (player.transform.position.x < this.transform.position.x)
+            {
                 transform.rotation = Quaternion.AngleAxis(180, Vector3.up);
+                leftTurned = true;
+            }
 
             turned = true;
         }
@@ -87,6 +98,10 @@ public class bossScript : HittableScript
                 case 3:
                     currentPhase = Phase.Jump;
                     Jump();
+                    break;
+                case 4:
+                    currentPhase = Phase.Move;
+                    Move();
                     break;
                 default:
                     break;
@@ -117,12 +132,24 @@ public class bossScript : HittableScript
     }
 
 
+    public void Move()
+    {
+        if (leftTurned)
+            movement.SetHorizontalVelocity(-moveValue);
+        else
+        movement.SetHorizontalVelocity(moveValue);
+
+        phaseCounter++;
+    }
+
 
     private void OnCollisionStay2D(Collision2D collision)
     {
+        Debug.Log(collision);
         if (collision.gameObject.CompareTag("Player"))
         {
             collision.gameObject.GetComponent<PlayerScript>().Hurt(damage);
+            Debug.Log(damage);
         }
     }
 
