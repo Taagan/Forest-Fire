@@ -12,6 +12,8 @@ public class PlayerScript : MonoBehaviour
     [SerializeField]
     public int maxHitPoints = 10;
     public int hitpoints;
+    [HideInInspector]
+    public int deathcounter;
 
     public int facing = 1;//1 = höger, -1 = vänster
     public bool iFrame;
@@ -20,6 +22,7 @@ public class PlayerScript : MonoBehaviour
     private float iFrameDuration = 1;
 
     public Text hpTXT;
+    public Text deathCountTXT;
     public GameObject currentCheckpoint;
 
     protected PlayerMovementScript movementScript;
@@ -52,6 +55,7 @@ public class PlayerScript : MonoBehaviour
         IFrameMethod();
 
         hpTXT.text = hitpoints.ToString();
+        deathCountTXT.text = deathcounter.ToString();
     }
 
     //samlingsställe för alla timernedräkningar och effekter de medför mest. Kallas i update()
@@ -102,7 +106,7 @@ public class PlayerScript : MonoBehaviour
         {
             SceneManager.LoadScene(0);
         }
-        else if (collision.gameObject.tag == "Checkpoint")
+        else if (collision.gameObject.tag == "Checkpoint" && currentCheckpoint != collision.gameObject)
         {
             currentCheckpoint = collision.gameObject;
         }

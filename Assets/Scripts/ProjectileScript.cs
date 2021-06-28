@@ -2,7 +2,7 @@
 
 public class ProjectileScript : MonoBehaviour
 {
-    public enum ProjectileType { returning, boss}
+    public enum ProjectileType { Returning, Boss, Foward}
     WalkerMovementScript movement;
     public ProjectileType type;
     public Vector3 destination;
@@ -19,12 +19,15 @@ public class ProjectileScript : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         movement = GetComponent<WalkerMovementScript>();
-        if (type == ProjectileType.boss)
+        if (type == ProjectileType.Boss)
         {
             moveDirection = (destination - this.transform.position).normalized * speed;
         }
-        if (type == ProjectileType.returning)
+        if (type == ProjectileType.Returning)
             movement.SetVerticalVelocity(speed);
+
+        if (type == ProjectileType.Foward)
+            movement.SetHorizontalVelocity(-speed);
 
         Destroy(gameObject, lifetime);
     }
@@ -33,10 +36,10 @@ public class ProjectileScript : MonoBehaviour
     {
         switch (type)
         {
-            case ProjectileType.returning:
+            case ProjectileType.Returning:
                 ReturningProjectile();
                 break;
-            case ProjectileType.boss:
+            case ProjectileType.Boss:
                 BossProjectile();
                 Explosion();
                 break;
@@ -56,14 +59,26 @@ public class ProjectileScript : MonoBehaviour
     }
 
 
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        Destroy(gameObject);
+    }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Player"))
         {
             collision.gameObject.GetComponent<PlayerScript>().Hurt(damage);
+            Destroy(gameObject);
+
         }
 
-        if (type == ProjectileType.boss && !collision.gameObject.CompareTag("Enemy") && !collision.gameObject.CompareTag("Semisolid"))
+        if (type == ProjectileType.Returning && collision.gameObject.CompareTag("Solid"))
+        {
+            Destroy(gameObject);
+        }
+
+        else if (type == ProjectileType.Boss && !collision.gameObject.CompareTag("Enemy") && !collision.gameObject.CompareTag("Semisolid"))
         {
             Destroy(gameObject);
         }
@@ -75,7 +90,8 @@ public class ProjectileScript : MonoBehaviour
         if (transform.position.x == destination.x)
         {
             //Do explosion effect
-            Destroy(gameObject);
+            //Projectile flies towards the players location when fired
+            //Destroy(gameObject);
         }
     }
 }

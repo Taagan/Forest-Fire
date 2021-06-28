@@ -56,6 +56,7 @@ public class GameManager : MonoBehaviour
     {
         if (player.GetComponent<PlayerScript>().hitpoints <= 0)
         {
+            player.GetComponent<PlayerScript>().deathcounter++;
             if (checkpoint)
                 LoadCheckPoint();
             else

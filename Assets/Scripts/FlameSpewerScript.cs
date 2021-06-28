@@ -9,6 +9,7 @@ public class FlameSpewerScript : MonoBehaviour
     public GameObject projectile;
     public GameObject fireSpawnPoint;
 
+
     void Update()
     {
         if (timer >= attackcd)
