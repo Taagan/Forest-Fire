@@ -10,10 +10,13 @@ public class goombaScript : HittableScript
     private WalkerMovementScript Movement;
     public GoombaType type;
     public float speed;
+    public float jumpSpeed;
     public int damage;
     private float flyingTimer;
     private GameObject player;
-
+    public GameObject LeftBorder, RightBorder;
+    float timer;
+    bool turned;
     [SerializeField]
     private float flyingCD = 5;
 
@@ -29,6 +32,12 @@ public class goombaScript : HittableScript
             flyingTimer = flyingCD;
             Movement.gravityConstant = speed;
         }
+        if (type == GoombaType.Flying || type == GoombaType.Walking)
+        {
+            LeftBorder = this.transform.parent.gameObject.transform.GetChild(1).gameObject;
+            RightBorder = this.transform.parent.gameObject.transform.GetChild(2).gameObject;
+
+        }
     }
 
     // Update is called once per frame
@@ -42,15 +51,16 @@ public class goombaScript : HittableScript
         switch (type)
         {
             case GoombaType.Walking:
-                Movement.SetHorizontalVelocity(-speed);
+                WalkingTurning();
                 break;
             case GoombaType.Flying:
                 flyingTimer += Time.deltaTime;
                 if (flyingTimer >= flyingCD)
                 {
-                    Movement.SetVerticalVelocity(speed);
+                    Movement.SetVerticalVelocity(jumpSpeed);
                     flyingTimer -= flyingTimer;
                 }
+                WalkingTurning();
                 break;
             case GoombaType.Stationary:
                 if (player.transform.position.x > this.transform.position.x)
@@ -60,6 +70,30 @@ public class goombaScript : HittableScript
                 break;
             default:
                 break;
+        }
+    }
+
+
+    void WalkingTurning()
+    {
+        if (!turned)
+        {
+            if (this.transform.position.x <= LeftBorder.transform.position.x ||
+                this.transform.position.x >= RightBorder.transform.position.x)
+            {
+                turned = true;
+                speed *= -1;
+                transform.Rotate(0, 180f, 0, Space.Self);
+            }
+            Movement.SetHorizontalVelocity(-speed);
+        }
+        else
+        {
+            timer += Time.deltaTime;
+            if (timer >= 1)
+            {
+                turned = false;
+            }
         }
     }
 
@@ -73,12 +107,13 @@ public class goombaScript : HittableScript
         switch (type)
         {
             case GoombaType.Walking:
-                    if (Movement.collisions.left && !collision.gameObject.CompareTag("Player") || (Movement.collisions.right) && !collision.gameObject.CompareTag("Player"))
-                    {
-                        speed *= -1;
-                        transform.Rotate(0, 180f, 0, Space.Self);
-                    }
-                break;
+                    //if (Movement.collisions.left && !collision.gameObject.CompareTag("Player") ||
+                    //(Movement.collisions.right) && !collision.gameObject.CompareTag("Player"))
+                    //{
+                    //    speed *= -1;
+                    //    transform.Rotate(0, 180f, 0, Space.Self);
+                    //}
+                    break;
             case GoombaType.Flying:
                 break;
             case GoombaType.Stationary:
