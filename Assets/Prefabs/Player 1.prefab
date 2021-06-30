@@ -5024,7 +5024,7 @@ MonoBehaviour:
   airDashUpVelocity: 10
   dashCooldown: 1.5
   maxDashes: 1
-  wallGlideHoldTime: 0
+  wallGlideHoldTime: 0.15
   wallGlideReleaseTime: 0.5
   wallJumpOutVelocity: 12
   wallJumpUpVelocity: 8
@@ -5044,6 +5044,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3de671f8553839743a2c212b4533c819, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  solidDropBufferTime: 1
 --- !u!114 &6982978206632956975
 MonoBehaviour:
   m_ObjectHideFlags: 0
