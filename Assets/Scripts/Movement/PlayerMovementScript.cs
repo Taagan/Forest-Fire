@@ -85,7 +85,7 @@ public class PlayerMovementScript : WalkerMovementScript
     protected float loseSpeedTimer = 0;
     protected int maxSpeedLevel;
     protected int moveDirLast = 1;
-    protected int moveDir = 1;
+    protected int moveDir = 1; //riktningen man ges input mot. Inte nödvändigtvis samma riktning som man just nu åker.
     protected float wantedHorizontalSpeed = 0f;
 
     public int wallGlideWallDir { get; protected set; } = 1;
@@ -209,9 +209,15 @@ public class PlayerMovementScript : WalkerMovementScript
                     goto case MovementState.none;
                 }
 
-                if (wallGlideHoldTimer <= 0 && !wallGlideDownForced)//glid neråt
+                if (!wallGlideDownForced)//glid neråt
                 {
-                    velocity.y -= wallGlideGravity * Time.deltaTime;
+                    if (velocity.y > 0)
+                        velocity.y -= gravityConstant * Time.deltaTime;
+                    else if (wallGlideHoldTimer > 0)
+                        velocity.y = 0;
+                    else
+                        velocity.y -= wallGlideGravity * Time.deltaTime;
+
                     if (velocity.y < -wallGlideMaxVelocity)
                         velocity.y = -wallGlideMaxVelocity;
                 }
@@ -319,7 +325,7 @@ public class PlayerMovementScript : WalkerMovementScript
     {
         float dT = Time.deltaTime;
 
-        if (wallGlideHoldTimer > 0)
+        if (wallGlideHoldTimer > 0 && velocity.y <= 0)
             wallGlideHoldTimer -= dT;
 
         if(wallGlideReleaseTimer > 0)
@@ -444,7 +450,7 @@ public class PlayerMovementScript : WalkerMovementScript
         if (moveDir == 0)
             return false;
 
-        if (moveDir == 1 && collisions.right || moveDir == -1 && collisions.left && velocity.y < 0)
+        if (moveDir == 1 && collisions.right || moveDir == -1 && collisions.left)
         {
             wallGlideWallDir = moveDir;
             return true;
@@ -467,7 +473,8 @@ public class PlayerMovementScript : WalkerMovementScript
             forgivnessTimer = forgivnessTime;
         }
 
-        velocity.y = 0;
+        if(velocity.y < 0)
+            velocity.y = 0;
         affectedByGravity = false;
         movementState = MovementState.wall_gliding;
     }
