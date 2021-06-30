@@ -3,40 +3,41 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-public enum GoombaType { Walking, Flying }
+public enum GoombaType { Walking, Flying, Stationary}
 
-public class goombaScript : MonoBehaviour
+public class goombaScript : HittableScript
 {
     private WalkerMovementScript Movement;
     public GoombaType type;
     public float speed;
+    public float jumpSpeed;
     public int damage;
-    public int hp;
     private float flyingTimer;
-
+    private GameObject player;
+    public GameObject LeftBorder, RightBorder;
+    float timer;
+    bool turned;
     [SerializeField]
     private float flyingCD = 5;
 
     private void Start()
     {
-        Movement = GetComponent<WalkerMovementScript>();
+        player = GameObject.FindGameObjectWithTag("Player");
+        if (type != GoombaType.Stationary)
+        {
+            Movement = GetComponent<WalkerMovementScript>();
+        }
         if (type == GoombaType.Flying)
         {
             flyingTimer = flyingCD;
             Movement.gravityConstant = speed;
         }
-    }
+        if (type == GoombaType.Flying || type == GoombaType.Walking)
+        {
+            LeftBorder = this.transform.parent.gameObject.transform.GetChild(1).gameObject;
+            RightBorder = this.transform.parent.gameObject.transform.GetChild(2).gameObject;
 
-    public void Damage(int dmg)
-    {
-        hp -= dmg;
-        DeathCheck();
-    }
-
-    private void DeathCheck()
-    {
-        if (hp <= 0)
-            Destroy(gameObject);
+        }
     }
 
     // Update is called once per frame
@@ -47,32 +48,79 @@ public class goombaScript : MonoBehaviour
 
     private void MovementType()
     {
-        if (type == GoombaType.Walking)
+        switch (type)
         {
+            case GoombaType.Walking:
+                WalkingTurning();
+                break;
+            case GoombaType.Flying:
+                flyingTimer += Time.deltaTime;
+                if (flyingTimer >= flyingCD)
+                {
+                    Movement.SetVerticalVelocity(jumpSpeed);
+                    flyingTimer -= flyingTimer;
+                }
+                WalkingTurning();
+                break;
+            case GoombaType.Stationary:
+                if (player.transform.position.x > this.transform.position.x)
+                    transform.rotation = Quaternion.AngleAxis(0, Vector3.up);
+                else
+                    transform.rotation = Quaternion.AngleAxis(180, Vector3.up);
+                break;
+            default:
+                break;
+        }
+    }
+
+
+    void WalkingTurning()
+    {
+        if (!turned)
+        {
+            if (this.transform.position.x <= LeftBorder.transform.position.x ||
+                this.transform.position.x >= RightBorder.transform.position.x)
+            {
+                turned = true;
+                speed *= -1;
+                transform.Rotate(0, 180f, 0, Space.Self);
+            }
             Movement.SetHorizontalVelocity(-speed);
         }
-        else if (type == GoombaType.Flying)
+        else
         {
-            flyingTimer += Time.deltaTime;
-            if (flyingTimer >= flyingCD)
+            timer += Time.deltaTime;
+            if (timer >= 1)
             {
-                Movement.SetVerticalVelocity(speed);
-                flyingTimer -= flyingTimer;
+                turned = false;
             }
         }
     }
 
-    private void OnCollisionStay2D(Collision2D collision)
+    private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (Movement.collisions.left && !CompareTag("Player") || (Movement.collisions.right) && !CompareTag("Player"))
+        if (collision.gameObject.CompareTag("Player"))
         {
-            Debug.Log("b");
-            speed *= -1;
-            transform.Rotate(0, 180f, 0, Space.Self);
+            collision.gameObject.GetComponent<PlayerScript>().Hurt(damage);
+            Debug.Log("a");
         }
-        if (CompareTag("Player"))
+        switch (type)
         {
-            //collision.gameObject.GetComponent<PlayerScript>().TakeDamage(damage);
+            case GoombaType.Walking:
+                    //if (Movement.collisions.left && !collision.gameObject.CompareTag("Player") ||
+                    //(Movement.collisions.right) && !collision.gameObject.CompareTag("Player"))
+                    //{
+                    //    speed *= -1;
+                    //    transform.Rotate(0, 180f, 0, Space.Self);
+                    //}
+                    break;
+            case GoombaType.Flying:
+                break;
+            case GoombaType.Stationary:
+                break;
+            default:
+                break;
         }
+        
     }
 }

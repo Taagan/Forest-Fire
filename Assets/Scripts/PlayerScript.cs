@@ -2,21 +2,27 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
-
+using UnityEngine.UI;
 
 public class PlayerScript : MonoBehaviour
 {
     //0 == no | 1 == yes
     public int hasSword;
     public int hasShield;
-
-    public int maxHitPoints { get; private set; } = 10;
+    [SerializeField]
+    public int maxHitPoints = 10;
     public int hitpoints;
+    [HideInInspector]
+    public int deathcounter;
 
     public int facing = 1;//1 = höger, -1 = vänster
-    
+    public bool iFrame;
+    private float iFrametimer;
+    [SerializeField]
+    private float iFrameDuration = 1;
 
+    public Text hpTXT;
+    public Text deathCountTXT;
     public GameObject currentCheckpoint;
 
     protected PlayerMovementScript movementScript;
@@ -44,9 +50,14 @@ public class PlayerScript : MonoBehaviour
             sRenderer.flipX = false;
         else if (facing == -1 && sRenderer.flipX == false)
             sRenderer.flipX = true;
-        
+
+        Suicide();
+        IFrameMethod();
+
+        hpTXT.text = hitpoints.ToString();
+        deathCountTXT.text = deathcounter.ToString();
     }
-    
+
     //samlingsställe för alla timernedräkningar och effekter de medför mest. Kallas i update()
     protected void UpdateTimers()
     {
@@ -64,9 +75,30 @@ public class PlayerScript : MonoBehaviour
 
     public void Hurt(int damage)
     {
-        hitpoints -= damage;
+        if (!iFrame && damage > 0)
+        {
+            hitpoints -= damage;
+            iFrame = true;
+        }
     }
     
+    private void IFrameMethod()
+    {
+        if (iFrame)
+        {
+            hpTXT.color = Color.blue;
+            iFrametimer += Time.deltaTime;
+            if (iFrametimer >= iFrameDuration)
+            {
+                iFrame = false;
+                iFrametimer -= iFrametimer;
+                hpTXT.color = Color.red;
+            }
+
+        }
+    }
+
+
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
@@ -74,7 +106,7 @@ public class PlayerScript : MonoBehaviour
         {
             SceneManager.LoadScene(0);
         }
-        else if (collision.gameObject.tag == "Checkpoint")
+        else if (collision.gameObject.tag == "Checkpoint" && currentCheckpoint != collision.gameObject)
         {
             currentCheckpoint = collision.gameObject;
         }
@@ -100,6 +132,15 @@ public class PlayerScript : MonoBehaviour
         {
             animator.SetBool("running", false);
             animator.speed = 1;
+        }
+    }
+
+
+    void Suicide()
+    {
+        if (Input.GetKeyDown("space"))
+        {
+            Kill();
         }
     }
 }

@@ -2,11 +2,12 @@
 
 public class ProjectileScript : MonoBehaviour
 {
-    public enum ProjectileType { returning, boss}
+    public enum ProjectileType { Returning, Boss, Foward}
+    WalkerMovementScript movement;
     public ProjectileType type;
     public Vector3 destination;
     Vector2 moveDirection;
-    public float damage;
+    public int damage;
     public float speed;
     public float lifetime;
     float timer;
@@ -17,10 +18,17 @@ public class ProjectileScript : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        if (type == ProjectileType.boss)
+        movement = GetComponent<WalkerMovementScript>();
+        if (type == ProjectileType.Boss)
         {
             moveDirection = (destination - this.transform.position).normalized * speed;
         }
+        if (type == ProjectileType.Returning)
+            movement.SetVerticalVelocity(speed);
+
+        if (type == ProjectileType.Foward)
+            movement.SetHorizontalVelocity(-speed);
+
         Destroy(gameObject, lifetime);
     }
 
@@ -28,10 +36,10 @@ public class ProjectileScript : MonoBehaviour
     {
         switch (type)
         {
-            case ProjectileType.returning:
+            case ProjectileType.Returning:
                 ReturningProjectile();
                 break;
-            case ProjectileType.boss:
+            case ProjectileType.Boss:
                 BossProjectile();
                 Explosion();
                 break;
@@ -42,13 +50,7 @@ public class ProjectileScript : MonoBehaviour
 
     void ReturningProjectile()
     {
-        timer += Time.deltaTime;
-        if (timer >= lifetime / 2 && !swapped)
-        {
-            speed *= -1;
-            swapped = true;
-        }
-        this.transform.Translate(speed, 0, 0);
+        //Do extra stuff if neccessary
     }
 
     void BossProjectile()
@@ -57,9 +59,26 @@ public class ProjectileScript : MonoBehaviour
     }
 
 
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        Destroy(gameObject);
+    }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (type == ProjectileType.boss && !collision.CompareTag("Enemy") && !collision.CompareTag("Semisolid"))
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            collision.gameObject.GetComponent<PlayerScript>().Hurt(damage);
+            Destroy(gameObject);
+
+        }
+
+        if (type == ProjectileType.Returning && collision.gameObject.CompareTag("Solid"))
+        {
+            Destroy(gameObject);
+        }
+
+        else if (type == ProjectileType.Boss && !collision.gameObject.CompareTag("Enemy") && !collision.gameObject.CompareTag("Semisolid"))
         {
             Destroy(gameObject);
         }
@@ -71,7 +90,8 @@ public class ProjectileScript : MonoBehaviour
         if (transform.position.x == destination.x)
         {
             //Do explosion effect
-            Destroy(gameObject);
+            //Projectile flies towards the players location when fired
+            //Destroy(gameObject);
         }
     }
 }

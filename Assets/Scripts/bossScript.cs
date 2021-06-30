@@ -2,25 +2,40 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class bossScript : MonoBehaviour
+
+public enum Phase { Idle, Slash, Projectile, Jump, Move }
+
+
+public class bossScript : HittableScript
 {
     WalkerMovementScript movement;
-    public enum Phase { Idle, Slash, Projectile, Jump}
+    SpriteRenderer sprite;
+    Color originalColor;
     public Phase currentPhase;
-    int phaseCounter;
+    public int phaseCounter;
     public float phaseTime;
     public float timer;
     public float jumpHeight = 5;
+    private float iFrameTimer;
+    public float iFrameDuration = 2;
+    public bool iFrame;
+    public float moveValue = 0.001f;
     bool turned;
+    bool leftTurned;
     public GameObject projectile;
     public GameObject slash;
     public GameObject fireSpawnPoint;
     private GameObject player;
+    public int damage = 10;
     // Start is called before the first frame update
     void Start()
     {
+        leftTurned = true;
+        sprite = GetComponent<SpriteRenderer>();
         movement = GetComponent<WalkerMovementScript>();
+        movement.ignoreSemisolid = true;
         player = GameObject.FindGameObjectWithTag("Player");
+        originalColor = sprite.color;
         switch (currentPhase)
         {
             case Phase.Idle:
@@ -43,7 +58,49 @@ public class bossScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (phaseCounter > 3)
+       
+        IFrameMethod();
+        if (phaseCounter > 0)
+        {
+            PhaseActions();
+        }
+    }
+
+    public void Slash()
+    {
+        GameObject flame = Instantiate(slash, fireSpawnPoint.transform.position, this.transform.rotation);
+        flame.GetComponent<ProjectileScript>().destination = player.transform.position;
+        phaseCounter++;
+    }
+
+    public void Projectile()
+    {
+        GameObject flame = Instantiate(projectile, fireSpawnPoint.transform.position, this.transform.rotation);
+        flame.GetComponent<ProjectileScript>().destination = player.transform.position;
+        phaseCounter++;
+    }
+
+    public void Jump()
+    {
+        movement.SetVerticalVelocity(jumpHeight);
+        phaseCounter++;
+    }
+
+
+    public void Move()
+    {
+        if (leftTurned)
+            movement.SetHorizontalVelocity(-moveValue);
+        else
+        movement.SetHorizontalVelocity(moveValue);
+
+        phaseCounter++;
+    }
+
+
+    void PhaseActions()
+    {
+        if (phaseCounter > 4)
         {
             phaseCounter = 1;
             currentPhase++;
@@ -52,10 +109,16 @@ public class bossScript : MonoBehaviour
         if (timer >= phaseTime / 2 && !turned)
         {
             if (player.transform.position.x > this.transform.position.x)
+            {
                 transform.rotation = Quaternion.AngleAxis(0, Vector3.up);
+                leftTurned = false;
+            }
 
             if (player.transform.position.x < this.transform.position.x)
+            {
                 transform.rotation = Quaternion.AngleAxis(180, Vector3.up);
+                leftTurned = true;
+            }
 
             turned = true;
         }
@@ -79,6 +142,10 @@ public class bossScript : MonoBehaviour
                     currentPhase = Phase.Jump;
                     Jump();
                     break;
+                case 4:
+                    currentPhase = Phase.Move;
+                    Move();
+                    break;
                 default:
                     break;
             }
@@ -87,23 +154,30 @@ public class bossScript : MonoBehaviour
         }
     }
 
-    public void Slash()
+
+    private void OnTriggerStay2D(Collider2D collision)
     {
-        GameObject flame = Instantiate(slash, fireSpawnPoint.transform.position, this.transform.rotation);
-        flame.GetComponent<ProjectileScript>().destination = player.transform.position;
-        phaseCounter++;
+        Debug.Log(collision);
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            collision.gameObject.GetComponent<PlayerScript>().Hurt(damage);
+            Debug.Log(damage);
+        }
     }
 
-    public void Projectile()
-    {
-        GameObject flame = Instantiate(projectile, fireSpawnPoint.transform.position, this.transform.rotation);
-        flame.GetComponent<ProjectileScript>().destination = player.transform.position;
-        phaseCounter++;
-    }
 
-    public void Jump()
+    private void IFrameMethod()
     {
-        movement.SetVerticalVelocity(jumpHeight);
-        phaseCounter++;
+        if (trigger)
+        {
+            iFrameTimer += Time.deltaTime;
+            sprite.color = Color.blue;
+            if (iFrameTimer >= iFrameDuration)
+            {
+                trigger = false;
+                iFrameTimer -= iFrameTimer;
+                sprite.color = originalColor;
+            }
+        }
     }
 }

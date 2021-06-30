@@ -121,10 +121,6 @@ public class PlayerMovementScript : WalkerMovementScript
     // Update is called once per frame
     override protected void Update()
     {
-        Debug.Log("dir: " + forgivnessDir);
-        Debug.Log("lvl: " + forgivnessLevel);
-        Debug.Log("timer: " + forgivnessTimer); 
-
         Timers();
 
         if (grounded)
